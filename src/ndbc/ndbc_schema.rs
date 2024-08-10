@@ -1,6 +1,6 @@
 // https://www.ndbc.noaa.gov/docs/ndbc_web_data_guide.pdf
 
-use chrono::prelude::{DateTime, Utc};
+use chrono::{prelude::{DateTime, Utc}, NaiveDateTime};
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize, Clone)]
@@ -59,6 +59,7 @@ pub struct StationsMetadataResponse {
 #[derive(Debug, Deserialize, Clone)]
 pub struct StationFile {
     pub filename: String,
+    pub station: String,
     pub year: String,
 }
 
@@ -90,12 +91,8 @@ impl StationDataType {
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct StationStdMetData {
-    pub filename: String,
-    pub year: String,
-    pub month: String,
-    pub day: String,
-    pub hour: String,
-    pub minute: String,
+    pub station: String,
+    pub timestamp: NaiveDateTime,
     pub wdir: String,
     pub wspd: String,
     pub gst: String,

@@ -62,10 +62,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // -------------------------------------------------------------------------
 
     let files = get_datatype_historic_files(StationDataType::StandardMeteorological).await?;
-    // println!("{files:#?}");
+    println!("{files:#?}");
+
+    println!("");
 
     let tmp = files[0].clone();
-    let res = get_station_historical_stdmet_data(&tmp.filename).await?;
+    let res = get_station_historical_stdmet_data(&tmp.station, &tmp.year).await?;
     println!("{res:#?}");
     // -------------------------------------------------------------------------
 

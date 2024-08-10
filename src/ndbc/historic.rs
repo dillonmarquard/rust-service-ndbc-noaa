@@ -1,11 +1,12 @@
+use chrono::NaiveDateTime;
 use regex::Regex;
 use serde_xml_rs::from_str;
 
 use super::ndbc_schema::{
-    StationDataType, StationFile, StationStdMetData, StationsMetadataResponse,
+    StationDataType, StationFile, StationStdMetData, StationsMetadataResponse, StationMetadata,
 };
 
-pub async fn get_stations_metadata() -> Result<StationsMetadataResponse, Box<dyn std::error::Error>>
+pub async fn get_stations_metadata() -> Result<Vec<StationMetadata>, Box<dyn std::error::Error>>
 {
     // This function returns the historical station metadata back to 2000 for all stations on the NDBC.
 
@@ -15,7 +16,7 @@ pub async fn get_stations_metadata() -> Result<StationsMetadataResponse, Box<dyn
 
     let res = from_str::<StationsMetadataResponse>(body.as_str()).unwrap();
 
-    Ok(res)
+    Ok(res.stations)
 }
 
 pub async fn get_station_available_history(
@@ -41,6 +42,7 @@ pub async fn get_station_available_history(
         .map(|c| c.extract())
         .map(|(_, [f, y])| StationFile {
             filename: f.to_string(),
+            station: f[0..=4].to_string(),
             year: y.to_string(),
         })
         .collect();
@@ -51,7 +53,7 @@ pub async fn get_station_available_history(
 pub async fn get_datatype_historic_files(
     data_type: StationDataType,
 ) -> Result<Vec<StationFile>, Box<dyn std::error::Error>> {
-    // This function returns a list of all downloadable historic files for a data_type (eg. stdmet, cwind, swden)
+    // This function returns a list of all downloadable historic files for a specified data_type (eg. stdmet, cwind, swden)
 
     let url: String =
         "".to_string() + "https://www.ndbc.noaa.gov/data/historical/" + data_type.as_str();
@@ -67,6 +69,7 @@ pub async fn get_datatype_historic_files(
         .map(|c| c.extract())
         .map(|(_, [f, _, _, _])| StationFile {
             filename: f.to_string(),
+            station: f[0..=4].to_string(),
             year: f[6..=9].to_string(),
         })
         .collect();
@@ -75,18 +78,19 @@ pub async fn get_datatype_historic_files(
 }
 
 pub async fn get_station_historical_stdmet_data(
-    filename: &str,
+    station: &str,
+    year: &str,
 ) -> Result<Vec<StationStdMetData>, Box<dyn std::error::Error>> {
-    // This function returns the raw sensor data for a stdmet historic file.
+    // This function returns the raw stdmet sensor data for a historic file.
 
     let url: String = "".to_string()
         + "https://www.ndbc.noaa.gov/view_text_file.php?filename="
-        + filename
+        + station + "h" + year + ".txt.gz"
         + "&dir=data/historical/"
         + StationDataType::StandardMeteorological.as_str()
         + "/";
     let re = Regex::new(
-        r"([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)\n",
+        r"([0-9a-zA-Z\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)\n",
     )
     .unwrap();
 
@@ -96,12 +100,8 @@ pub async fn get_station_historical_stdmet_data(
         .captures_iter(&body)
         .map(|c| c.extract())
         .map(|(_, [year, month, day, hour, minute, wdir, wspd, gst, wvht, dpd, apd, mwd, pres, atmp, wtmp, dewp, vis, tide])| StationStdMetData {
-            filename: filename.to_string(),
-            year: year.to_string(),
-            month: month.to_string(),
-            day: day.to_string(),
-            hour: hour.to_string(),
-            minute: minute.to_string(),
+            station: station.to_string(),
+            timestamp: NaiveDateTime::parse_from_str(("".to_string() + year + "-" + month + "-" + day + " " + hour + ":" + minute).as_str(), "%Y-%m-%d %H:%M").unwrap(),
             wdir: wdir.to_string(),
             wspd: wspd.to_string(),
             gst: gst.to_string(),
