@@ -13,13 +13,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // -------------------------------------------------------------------------
 
     let active_stations = get_active_stations().await?;
-    let res: Vec<&Station> = active_stations
+    let active_met_stations: Vec<&Station> = active_stations
         .stations
         .iter()
-        .filter(|&s| s.met.as_ref().is_some_and(|r| r == "y"))
+        .filter(|&s| s.met.as_ref().is_some_and(|m| m == "y"))
         .collect();
 
-    println!("{res:#?}");
+    println!("{active_met_stations:#?}");
 
     // -------------------------------------------------------------------------
 
@@ -75,7 +75,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("{res:#?}");
     // -------------------------------------------------------------------------
 
-    let res = get_station_realtime_stdmet_data(&tmp_sf.station).await?;
+    let tmp_sf = active_met_stations[0];
+    let res = get_station_realtime_stdmet_data(&tmp_sf.id).await?;
     println!("{res:#?}");
 
     Ok(())
