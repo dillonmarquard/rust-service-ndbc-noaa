@@ -1,9 +1,8 @@
-use crate::ndbc::ndbc_schema::{
-    get_active_stations, get_all_stations_available_history, get_station_available_history,
-    get_stations_metadata, StationDataType,
-};
 use futures::{stream, StreamExt, TryStreamExt};
-use ndbc::ndbc_schema::{ActiveStationsMetadataResponse, StationFileStdMet, StationMetadata};
+use ndbc::{
+    historic::{get_datatype_historic_files, get_station_historical_stdmet_data},
+    ndbc_schema::{StationDataType, StationFile, StationMetadata, StationsMetadataResponse},
+};
 use rand::distributions::{Distribution, Uniform};
 use std::{thread, time};
 use tokio;
@@ -62,9 +61,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // -------------------------------------------------------------------------
 
-    let files = get_all_stations_available_history(StationDataType::StandardMeteorological).await?;
-    println!("{files:#?}");
+    let files = get_datatype_historic_files(StationDataType::StandardMeteorological).await?;
+    // println!("{files:#?}");
 
+    let tmp = files[0].clone();
+    let res = get_station_historical_stdmet_data(&tmp.filename).await?;
+    println!("{res:#?}");
     // -------------------------------------------------------------------------
 
     Ok(())

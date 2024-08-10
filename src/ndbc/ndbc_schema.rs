@@ -1,10 +1,7 @@
 // https://www.ndbc.noaa.gov/docs/ndbc_web_data_guide.pdf
 
 use chrono::prelude::{DateTime, Utc};
-use regex::Regex;
-use reqwest;
 use serde::Deserialize;
-use serde_xml_rs::from_str;
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct Station {
@@ -53,47 +50,14 @@ pub struct StationMetadata {
 }
 
 #[derive(Debug, Deserialize, Clone)]
-pub struct ActiveStationsMetadataResponse {
+pub struct StationsMetadataResponse {
     pub created: DateTime<Utc>,
     #[serde(alias = "station")]
     pub stations: Vec<StationMetadata>,
 }
 
-pub async fn get_active_stations() -> Result<ActiveStationsResponse, Box<dyn std::error::Error>> {
-    let url: &str = "https://www.ndbc.noaa.gov/activestations.xml";
-
-    let body = reqwest::get(url).await?.text().await?;
-
-    let res = from_str::<ActiveStationsResponse>(body.as_str()).unwrap();
-
-    Ok(res)
-}
-
-pub async fn get_stations_metadata(
-) -> Result<ActiveStationsMetadataResponse, Box<dyn std::error::Error>> {
-    let url: &str = "https://www.ndbc.noaa.gov/metadata/stationmetadata.xml";
-
-    let body = reqwest::get(url).await?.text().await?;
-
-    let res = from_str::<ActiveStationsMetadataResponse>(body.as_str()).unwrap();
-
-    Ok(res)
-}
-
-pub async fn get_station_realtime_data(
-    station: &str,
-) -> Result<ActiveStationsMetadataResponse, Box<dyn std::error::Error>> {
-    let url: String = format!("https://www.ndbc.noaa.gov/data/realtime2/{station}.spec");
-
-    let body = reqwest::get(url).await?.text().await?;
-
-    let res = from_str::<ActiveStationsMetadataResponse>(body.as_str()).unwrap();
-
-    Ok(res)
-}
-
 #[derive(Debug, Deserialize, Clone)]
-pub struct StationFileStdMet {
+pub struct StationFile {
     pub filename: String,
     pub year: String,
 }
@@ -108,8 +72,9 @@ pub enum StationDataType {
     SpectralWaveR2Density,
     SolarRadiation,
 }
+
 impl StationDataType {
-    fn as_str(&self) -> &'static str {
+    pub fn as_str(&self) -> &'static str {
         match self {
             StationDataType::StandardMeteorological => "stdmet",
             StationDataType::ContinuousWinds => "cwind",
@@ -123,56 +88,25 @@ impl StationDataType {
     }
 }
 
-pub async fn get_station_available_history(
-    station: &str,
-    data_type: StationDataType,
-) -> Result<Vec<StationFileStdMet>, Box<dyn std::error::Error>> {
-    let url: String = format!("https://www.ndbc.noaa.gov/station_history.php?station={station}");
-    let re = Regex::new(
-        ("".to_string()
-            + r###"<a href="/download_data\.php\?filename=(.{5,25})&amp;dir=data/historical/"###
-            + data_type.as_str()
-            + r###"/">(.{1,6})</a>"###)
-            .as_str(),
-    )
-    .unwrap();
-
-    let body = reqwest::get(url).await?.text().await?;
-
-    let res = re
-        .captures_iter(&body)
-        .map(|c| c.extract())
-        .map(|(_, [f, y])| StationFileStdMet {
-            filename: f.to_string(),
-            year: y.to_string(),
-        })
-        .collect();
-
-    Ok(res)
+#[derive(Debug, Deserialize, Clone)]
+pub struct StationStdMetData {
+    pub filename: String,
+    pub year: String,
+    pub month: String,
+    pub day: String,
+    pub hour: String,
+    pub minute: String,
+    pub wdir: String,
+    pub wspd: String,
+    pub gst: String,
+    pub wvht: String,
+    pub dpd: String,
+    pub apd: String,
+    pub mwd: String,
+    pub pres: String,
+    pub atmp: String,
+    pub wtmp: String,
+    pub dewp: String,
+    pub vis: String,
+    pub tide: String,
 }
-
-pub async fn get_all_stations_available_history(
-    data_type: StationDataType,
-) -> Result<Vec<StationFileStdMet>, Box<dyn std::error::Error>> {
-    let url: String =
-        "".to_string() + "https://www.ndbc.noaa.gov/data/historical/" + data_type.as_str();
-    let re = Regex::new(
-        r###"<tr><td valign="top"><img src="/icons/compressed.gif" alt="\[   \]"></td><td><a href="(.{5,50})">(.{5,50})</a></td><td align="right">(.{5,50})  </td><td align="right"> (.{1,50})</td><td>&nbsp;</td></tr>"###,
-    )
-    .unwrap();
-
-    let body = reqwest::get(url).await?.text().await?;
-
-    let res = re
-        .captures_iter(&body)
-        .map(|c| c.extract())
-        .map(|(_, [f, _, _, _])| StationFileStdMet {
-            filename: f.to_string(),
-            year: f[6..=9].to_string(),
-        })
-        .collect();
-
-    Ok(res)
-}
-
-//
