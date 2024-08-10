@@ -118,7 +118,7 @@ impl StationDataType {
             StationDataType::SpectralWaveA2Density => "swdir2",
             StationDataType::SpectralWaveR1Density => "swr1",
             StationDataType::SpectralWaveR2Density => "swr2",
-            StationDataType::SolarRadiation => "srad"
+            StationDataType::SolarRadiation => "srad",
         }
     }
 }
@@ -128,7 +128,14 @@ pub async fn get_station_available_history(
     data_type: StationDataType,
 ) -> Result<Vec<StationHistorySTDMET>, Box<dyn std::error::Error>> {
     let url: String = format!("https://www.ndbc.noaa.gov/station_history.php?station={station}");
-    let re = Regex::new(("".to_string() + r###"<a href="/download_data\.php\?filename=(.{5,25})&amp;dir=data/historical/"### + data_type.as_str() + r###"/">(.{1,6})</a>"###).as_str()).unwrap();
+    let re = Regex::new(
+        ("".to_string()
+            + r###"<a href="/download_data\.php\?filename=(.{5,25})&amp;dir=data/historical/"###
+            + data_type.as_str()
+            + r###"/">(.{1,6})</a>"###)
+            .as_str(),
+    )
+    .unwrap();
 
     let body = reqwest::get(url).await?.text().await?;
 
