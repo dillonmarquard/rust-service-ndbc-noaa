@@ -1,1 +1,1 @@
-pub mod noaa_schema;
+pub mod ndbc_schema;

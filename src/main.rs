@@ -1,8 +1,8 @@
-use crate::ndbc::noaa_schema::{
+use crate::ndbc::ndbc_schema::{
     get_active_stations, get_station_available_history, get_stations_metadata, StationDataType,
 };
 use futures::{stream, StreamExt, TryStreamExt};
-use ndbc::noaa_schema::{ActiveStationsMetadataResponse, StationHistorySTDMET, StationMetadata};
+use ndbc::ndbc_schema::{ActiveStationsMetadataResponse, StationHistorySTDMET, StationMetadata};
 use rand::distributions::{Distribution, Uniform};
 use std::{thread, time};
 use tokio;
