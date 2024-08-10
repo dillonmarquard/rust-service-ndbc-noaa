@@ -1,10 +1,9 @@
-use futures::{stream, StreamExt, TryStreamExt};
 use ndbc::{
     historic::{get_datatype_historic_files, get_station_historical_stdmet_data},
-    ndbc_schema::{StationDataType, StationFile, StationMetadata, StationsMetadataResponse},
+    ndbc_schema::{Station, StationDataType, StationFile},
+    realtime::{get_active_stations, get_station_realtime_stdmet_data},
 };
-use rand::distributions::{Distribution, Uniform};
-use std::{thread, time};
+
 use tokio;
 
 pub mod ndbc;
@@ -13,10 +12,14 @@ pub mod ndbc;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // -------------------------------------------------------------------------
 
-    // let active_stations = get_active_stations().await?;
-    // let res = &active_stations.stations[0];
+    let active_stations = get_active_stations().await?;
+    let res: Vec<&Station> = active_stations
+        .stations
+        .iter()
+        .filter(|&s| s.met.as_ref().is_some_and(|r| r == "y"))
+        .collect();
 
-    // println!("{res:#?}");
+    println!("{res:#?}");
 
     // -------------------------------------------------------------------------
 
@@ -66,10 +69,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("");
 
-    let tmp = files[0].clone();
-    let res = get_station_historical_stdmet_data(&tmp.station, &tmp.year).await?;
+    let tmp: Vec<&StationFile> = files.iter().filter(|&f| f.year == "2023").collect();
+    let tmp_sf = tmp[0];
+    let res = get_station_historical_stdmet_data(&tmp_sf.station, &tmp_sf.year).await?;
     println!("{res:#?}");
     // -------------------------------------------------------------------------
+
+    let res = get_station_realtime_stdmet_data(&tmp_sf.station).await?;
+    println!("{res:#?}");
 
     Ok(())
 }

@@ -1,6 +1,9 @@
 // https://www.ndbc.noaa.gov/docs/ndbc_web_data_guide.pdf
 
-use chrono::{prelude::{DateTime, Utc}, NaiveDateTime};
+use chrono::{
+    prelude::{DateTime, Utc},
+    NaiveDateTime,
+};
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize, Clone)]

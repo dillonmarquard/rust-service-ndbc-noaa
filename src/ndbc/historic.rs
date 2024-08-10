@@ -3,11 +3,10 @@ use regex::Regex;
 use serde_xml_rs::from_str;
 
 use super::ndbc_schema::{
-    StationDataType, StationFile, StationStdMetData, StationsMetadataResponse, StationMetadata,
+    StationDataType, StationFile, StationMetadata, StationStdMetData, StationsMetadataResponse,
 };
 
-pub async fn get_stations_metadata() -> Result<Vec<StationMetadata>, Box<dyn std::error::Error>>
-{
+pub async fn get_stations_metadata() -> Result<Vec<StationMetadata>, Box<dyn std::error::Error>> {
     // This function returns the historical station metadata back to 2000 for all stations on the NDBC.
 
     let url: &str = "https://www.ndbc.noaa.gov/metadata/stationmetadata.xml";
@@ -19,11 +18,12 @@ pub async fn get_stations_metadata() -> Result<Vec<StationMetadata>, Box<dyn std
     Ok(res.stations)
 }
 
-pub async fn get_station_available_history(
+pub async fn get_station_available_downloads(
     station: &str,
     data_type: StationDataType,
 ) -> Result<Vec<StationFile>, Box<dyn std::error::Error>> {
     // This function returns a list of historic files for the given station and data_type (eg. stdmet, cwind, swden)
+    // Please use get_datatype_historic_files and filter the desired stations to avoid spamming the resource.
 
     let url: String = format!("https://www.ndbc.noaa.gov/station_history.php?station={station}");
     let re = Regex::new(
@@ -81,11 +81,14 @@ pub async fn get_station_historical_stdmet_data(
     station: &str,
     year: &str,
 ) -> Result<Vec<StationStdMetData>, Box<dyn std::error::Error>> {
-    // This function returns the raw stdmet sensor data for a historic file.
+    // This function returns the historic raw stdmet sensor data for a given station over a given year.
 
     let url: String = "".to_string()
         + "https://www.ndbc.noaa.gov/view_text_file.php?filename="
-        + station + "h" + year + ".txt.gz"
+        + station
+        + "h"
+        + year
+        + ".txt.gz"
         + "&dir=data/historical/"
         + StationDataType::StandardMeteorological.as_str()
         + "/";

@@ -2,10 +2,11 @@ use chrono::NaiveDateTime;
 use regex::Regex;
 use serde_xml_rs::from_str;
 
-use super::ndbc_schema::{ActiveStationsResponse, StationDataType, StationStdMetData};
+use super::ndbc_schema::{ActiveStationsResponse, StationStdMetData};
 
 pub async fn get_active_stations() -> Result<ActiveStationsResponse, Box<dyn std::error::Error>> {
     // This function returns a list of active stations.
+    // just because a station is active does not mean it has stdmet data.
 
     let url: &str = "https://www.ndbc.noaa.gov/activestations.xml";
 
@@ -16,14 +17,13 @@ pub async fn get_active_stations() -> Result<ActiveStationsResponse, Box<dyn std
     Ok(res)
 }
 
-pub async fn get_station_realtime_data(
-    station: &str
+pub async fn get_station_realtime_stdmet_data(
+    station: &str,
 ) -> Result<Vec<StationStdMetData>, Box<dyn std::error::Error>> {
-    // This function returns the raw stdmet sensor data for a station in the last 45 days.
+    // This function returns the raw stdmet sensor data for a given station over the last 45 days.
 
-    let url: String = "".to_string()
-        + "https://www.ndbc.noaa.gov/data/realtime2/"
-        + station + ".txt";
+    let url: String =
+        "".to_string() + "https://www.ndbc.noaa.gov/data/realtime2/" + station + ".txt";
     let re = Regex::new(
         r"([0-9a-zA-Z\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)\n",
     )
