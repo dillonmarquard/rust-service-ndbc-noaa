@@ -93,7 +93,7 @@ pub async fn get_station_realtime_data(
 }
 
 #[derive(Debug, Deserialize, Clone)]
-pub struct StationHistorySTDMET {
+pub struct StationFileStdMet {
     pub filename: String,
     pub year: String,
 }
@@ -126,7 +126,7 @@ impl StationDataType {
 pub async fn get_station_available_history(
     station: &str,
     data_type: StationDataType,
-) -> Result<Vec<StationHistorySTDMET>, Box<dyn std::error::Error>> {
+) -> Result<Vec<StationFileStdMet>, Box<dyn std::error::Error>> {
     let url: String = format!("https://www.ndbc.noaa.gov/station_history.php?station={station}");
     let re = Regex::new(
         ("".to_string()
@@ -142,7 +142,7 @@ pub async fn get_station_available_history(
     let res = re
         .captures_iter(&body)
         .map(|c| c.extract())
-        .map(|(_, [f, y])| StationHistorySTDMET {
+        .map(|(_, [f, y])| StationFileStdMet {
             filename: f.to_string(),
             year: y.to_string(),
         })
@@ -150,3 +150,29 @@ pub async fn get_station_available_history(
 
     Ok(res)
 }
+
+pub async fn get_all_stations_available_history(
+    data_type: StationDataType,
+) -> Result<Vec<StationFileStdMet>, Box<dyn std::error::Error>> {
+    let url: String =
+        "".to_string() + "https://www.ndbc.noaa.gov/data/historical/" + data_type.as_str();
+    let re = Regex::new(
+        r###"<tr><td valign="top"><img src="/icons/compressed.gif" alt="\[   \]"></td><td><a href="(.{5,50})">(.{5,50})</a></td><td align="right">(.{5,50})  </td><td align="right"> (.{1,50})</td><td>&nbsp;</td></tr>"###,
+    )
+    .unwrap();
+
+    let body = reqwest::get(url).await?.text().await?;
+
+    let res = re
+        .captures_iter(&body)
+        .map(|c| c.extract())
+        .map(|(_, [f, _, _, _])| StationFileStdMet {
+            filename: f.to_string(),
+            year: f[6..=9].to_string(),
+        })
+        .collect();
+
+    Ok(res)
+}
+
+//
