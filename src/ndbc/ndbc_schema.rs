@@ -4,9 +4,9 @@ use chrono::{
     prelude::{DateTime, Utc},
     NaiveDateTime,
 };
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Station {
     pub id: String,
     pub lat: Option<String>,
@@ -22,7 +22,7 @@ pub struct Station {
     pub dart: Option<String>,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct ActiveStationsResponse {
     pub created: DateTime<Utc>,
     pub count: Option<String>,
@@ -30,7 +30,7 @@ pub struct ActiveStationsResponse {
     pub stations: Vec<Station>,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct StationMetadataHistory {
     pub start: Option<String>,
     pub stop: Option<String>,
@@ -42,7 +42,7 @@ pub struct StationMetadataHistory {
     pub anemom_height: Option<String>,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct StationMetadata {
     pub id: String,
     pub name: Option<String>,
@@ -52,14 +52,14 @@ pub struct StationMetadata {
     pub history: Vec<StationMetadataHistory>,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct StationsMetadataResponse {
     pub created: DateTime<Utc>,
     #[serde(alias = "station")]
     pub stations: Vec<StationMetadata>,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct StationFile {
     pub filename: String,
     pub station: String,
@@ -92,7 +92,7 @@ impl StationDataType {
     }
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct StationStdMetData {
     pub station: String,
     pub timestamp: NaiveDateTime,
