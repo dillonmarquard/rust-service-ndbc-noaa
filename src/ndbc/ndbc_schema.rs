@@ -4,7 +4,25 @@ use chrono::{
     prelude::{DateTime, Utc},
     NaiveDateTime,
 };
-use serde::{Deserialize, Serialize};
+use serde::{de, Deserialize, Serialize};
+
+fn deserialize_bool<'de, D>(deserializer: D) -> Result<Option<bool>, D::Error>
+where
+    D: de::Deserializer<'de>,
+{
+    let s: Option<String> = de::Deserialize::deserialize(deserializer).unwrap_or(None);
+
+    match s {
+        Some(h) => {
+            match h.as_str() {
+                "y" => Ok(Some(true)),
+                "n" => Ok(Some(false)),
+                _ => Ok(None),
+            }
+        },
+        None => Ok(None),
+    }
+}
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Station {
@@ -16,10 +34,14 @@ pub struct Station {
     pub owner: Option<String>,
     pub pgm: Option<String>,
     pub r#type: Option<String>,
-    pub met: Option<String>,
-    pub currents: Option<String>,
-    pub waterquality: Option<String>,
-    pub dart: Option<String>,
+    #[serde(default, deserialize_with = "deserialize_bool")]
+    pub met: Option<bool>,
+    #[serde(default, deserialize_with = "deserialize_bool")]
+    pub currents: Option<bool>,
+    #[serde(default, deserialize_with = "deserialize_bool")]
+    pub waterquality: Option<bool>,
+    #[serde(default, deserialize_with = "deserialize_bool")]
+    pub dart: Option<bool>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -96,17 +118,17 @@ impl StationDataType {
 pub struct StationStdMetData {
     pub station: String,
     pub timestamp: NaiveDateTime,
-    pub wdir: String,
-    pub wspd: String,
-    pub gst: String,
-    pub wvht: String,
-    pub dpd: String,
-    pub apd: String,
-    pub mwd: String,
-    pub pres: String,
-    pub atmp: String,
-    pub wtmp: String,
-    pub dewp: String,
-    pub vis: String,
-    pub tide: String,
+    pub wdir: Option<String>,
+    pub wspd: Option<String>,
+    pub gst: Option<String>,
+    pub wvht: Option<String>,
+    pub dpd: Option<String>,
+    pub apd: Option<String>,
+    pub mwd: Option<String>,
+    pub pres: Option<String>,
+    pub atmp: Option<String>,
+    pub wtmp: Option<String>,
+    pub dewp: Option<String>,
+    pub vis: Option<String>,
+    pub tide: Option<String>,
 }

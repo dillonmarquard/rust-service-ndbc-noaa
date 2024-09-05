@@ -17,9 +17,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // -------------------------------------------------------------------------
 
     let active_stations = get_active_stations().await?;
-    let active_met_stations: Vec<&Station> = active_stations
-        .iter()
-        .filter(|&s| s.met.as_ref().is_some_and(|m| m == "y"))
+    let active_met_stations: Vec<Station> = active_stations
+        .into_iter()
+        .filter(|s| s.met.as_ref().is_some_and(|&m| m == true ))
         .collect();
 
     println!("{active_met_stations:#?}");
@@ -72,13 +72,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("");
 
-    let tmp: Vec<&StationFile> = files.iter().filter(|&f| f.year == "2019").collect();
+    let tmp: Vec<&StationFile> = files.iter().filter(|&f| f.year == "2020").collect();
     let tmp_sf = tmp[0];
     let res = get_station_historical_stdmet_data(&tmp_sf.station, &tmp_sf.year).await?;
     println!("{res:#?}");
     // -------------------------------------------------------------------------
 
-    let tmp_sf = active_met_stations[0];
+    let tmp_sf = &active_met_stations[0];
     let res = get_station_realtime_stdmet_data(&tmp_sf.id).await?;
     println!("{res:#?}");
 
