@@ -10,11 +10,14 @@ pub mod ndbc;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // get all active stations
+    // historic sync of stdmet data to db
+    // (daily, 30-day) realtime sync to db
+    // analysis on-top of db
     // -------------------------------------------------------------------------
 
     let active_stations = get_active_stations().await?;
     let active_met_stations: Vec<&Station> = active_stations
-        .stations
         .iter()
         .filter(|&s| s.met.as_ref().is_some_and(|m| m == "y"))
         .collect();
@@ -69,7 +72,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("");
 
-    let tmp: Vec<&StationFile> = files.iter().filter(|&f| f.year == "2023").collect();
+    let tmp: Vec<&StationFile> = files.iter().filter(|&f| f.year == "2019").collect();
     let tmp_sf = tmp[0];
     let res = get_station_historical_stdmet_data(&tmp_sf.station, &tmp_sf.year).await?;
     println!("{res:#?}");

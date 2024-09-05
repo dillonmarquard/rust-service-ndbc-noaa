@@ -2,9 +2,9 @@ use chrono::NaiveDateTime;
 use regex::Regex;
 use serde_xml_rs::from_str;
 
-use super::ndbc_schema::{ActiveStationsResponse, StationStdMetData};
+use super::ndbc_schema::{ActiveStationsResponse, Station, StationStdMetData};
 
-pub async fn get_active_stations() -> Result<ActiveStationsResponse, Box<dyn std::error::Error>> {
+pub async fn get_active_stations() -> Result<Vec<Station>, Box<dyn std::error::Error>> {
     // This function returns a list of active stations.
     // just because a station is active does not mean it has stdmet data.
 
@@ -14,7 +14,7 @@ pub async fn get_active_stations() -> Result<ActiveStationsResponse, Box<dyn std
 
     let res = from_str::<ActiveStationsResponse>(body.as_str()).unwrap();
 
-    Ok(res)
+    Ok(res.stations)
 }
 
 pub async fn get_station_realtime_stdmet_data(
