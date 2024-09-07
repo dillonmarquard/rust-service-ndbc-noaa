@@ -25,32 +25,36 @@ pub async fn get_station_realtime_stdmet_data(
     let url: String =
         "".to_string() + "https://www.ndbc.noaa.gov/data/realtime2/" + station + ".txt";
     let re = Regex::new(
-        r"([0-9a-zA-Z\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)[\s]+([0-9\.-]+)\n",
+        r"([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)\n",
     )
     .unwrap();
+
+    println!("{url:?}");
 
     let body = reqwest::get(url).await?.text().await?;
 
     let res = re
         .captures_iter(&body)
         .map(|c| c.extract())
-        .map(|(_, [year, month, day, hour, minute, wdir, wspd, gst, wvht, dpd, apd, mwd, pres, atmp, wtmp, dewp, vis, tide])| StationStdMetData {
-            station: station.to_string(),
-            timestamp: NaiveDateTime::parse_from_str(("".to_string() + year + "-" + month + "-" + day + " " + hour + ":" + minute).as_str(), "%y/%m/%d %H:%M").unwrap(),
-            wdir: if wdir != "999" { Some(wdir.to_string()) } else {None} ,
-            wspd: if wspd != "99.0" { Some(wspd.to_string())} else {None},
-            gst: if gst != "99.0" { Some(gst.to_string())} else {None},
-            wvht: if wvht != "99.00" { Some(wvht.to_string())} else {None},
-            dpd: if dpd != "99.00" { Some(dpd.to_string())} else {None},
-            apd: if apd != "99.00" { Some(apd.to_string())} else {None},
-            mwd: if mwd != "999" { Some(mwd.to_string())} else {None},
-            pres: if pres != "9999.0" { Some(pres.to_string())} else {None},
-            atmp: if atmp != "999.0" { Some(atmp.to_string())} else {None},
-            wtmp: if wtmp != "99.0" { Some(wtmp.to_string())} else {None}, // unsure of null value
-            dewp: if dewp != "999.0" { Some(dewp.to_string())} else {None},
-            vis: if vis != "99.0" { Some(vis.to_string())} else {None},
-            tide: if tide != "99.0" { Some(tide.to_string())} else {None}
-        })
+        .map(|(_, [year, month, day, hour, minute, wdir, wspd, gst, wvht, dpd, apd, mwd, pres, atmp, wtmp, dewp, vis, _ptdy, tide])| 
+            StationStdMetData {
+                station: station.to_string(),
+                timestamp: NaiveDateTime::parse_from_str(("".to_string() + year + "-" + month + "-" + day + " " + hour + ":" + minute).as_str(), "%Y-%m-%d %H:%M").unwrap(),
+                wdir: if wdir != "MM" { Some(wdir.to_string()) } else {None} ,
+                wspd: if wspd != "MM" { Some(wspd.to_string())} else {None},
+                gst: if gst != "MM" { Some(gst.to_string())} else {None},
+                wvht: if wvht != "MM" { Some(wvht.to_string())} else {None},
+                dpd: if dpd != "MM" { Some(dpd.to_string())} else {None},
+                apd: if apd != "MM" { Some(apd.to_string())} else {None},
+                mwd: if mwd != "MM" { Some(mwd.to_string())} else {None},
+                pres: if pres != "MM" { Some(pres.to_string())} else {None},
+                atmp: if atmp != "MM" { Some(atmp.to_string())} else {None},
+                wtmp: if wtmp != "MM" { Some(wtmp.to_string())} else {None},
+                dewp: if dewp != "MM" { Some(dewp.to_string())} else {None},
+                vis: if vis != "MM" { Some(vis.to_string())} else {None},
+                tide: if tide != "MM" { Some(tide.to_string())} else {None}
+            }
+        )
         .collect();
 
     Ok(res)

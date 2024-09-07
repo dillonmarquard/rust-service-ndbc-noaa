@@ -72,8 +72,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("");
 
-    let tmp: Vec<&StationFile> = files.iter().filter(|&f| f.year == "2020").collect();
-    let tmp_sf = tmp[0];
+    let tmp: Vec<StationFile> = files.into_iter().filter(|f| f.year == "2023").collect();
+    let tmp_sf = &tmp[0];
     let res = get_station_historical_stdmet_data(&tmp_sf.station, &tmp_sf.year).await?;
     println!("{res:#?}");
     // -------------------------------------------------------------------------
