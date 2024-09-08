@@ -13,19 +13,27 @@ where
     let s: Option<String> = de::Deserialize::deserialize(deserializer).unwrap_or(None);
 
     match s {
-        Some(h) => {
-            match h.as_str() {
-                "y" => Ok(Some(true)),
-                "n" => Ok(Some(false)),
-                _ => Ok(None),
-            }
+        Some(h) => match h.as_str() {
+            "y" => Ok(Some(true)),
+            "n" => Ok(Some(false)),
+            _ => Ok(None),
         },
         None => Ok(None),
     }
 }
 
+fn deserialize_string_upper<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: de::Deserializer<'de>,
+{
+    let s: String = de::Deserialize::deserialize(deserializer)?;
+
+    Ok(s.to_uppercase())
+}
+
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Station {
+    #[serde(default, deserialize_with = "deserialize_string_upper")]
     pub id: String,
     pub lat: Option<String>,
     pub lon: Option<String>,

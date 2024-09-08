@@ -22,14 +22,14 @@ pub async fn get_station_realtime_stdmet_data(
 ) -> Result<Vec<StationStdMetData>, Box<dyn std::error::Error>> {
     // This function returns the raw stdmet sensor data for a given station over the last 45 days.
 
-    let url: String =
-        "".to_string() + "https://www.ndbc.noaa.gov/data/realtime2/" + station + ".txt";
+    let url: String = "".to_string()
+        + "https://www.ndbc.noaa.gov/data/realtime2/"
+        + station.to_lowercase().as_str()
+        + ".txt";
     let re = Regex::new(
         r"([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)\n",
     )
     .unwrap();
-
-    println!("{url:?}");
 
     let body = reqwest::get(url).await?.text().await?;
 
@@ -38,7 +38,7 @@ pub async fn get_station_realtime_stdmet_data(
         .map(|c| c.extract())
         .map(|(_, [year, month, day, hour, minute, wdir, wspd, gst, wvht, dpd, apd, mwd, pres, atmp, wtmp, dewp, vis, _ptdy, tide])| 
             StationStdMetData {
-                station: station.to_string(),
+                station: station.to_string().to_uppercase(),
                 timestamp: NaiveDateTime::parse_from_str(("".to_string() + year + "-" + month + "-" + day + " " + hour + ":" + minute).as_str(), "%Y-%m-%d %H:%M").unwrap(),
                 wdir: if wdir != "MM" { Some(wdir.to_string()) } else {None} ,
                 wspd: if wspd != "MM" { Some(wspd.to_string())} else {None},

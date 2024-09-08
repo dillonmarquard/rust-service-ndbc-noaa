@@ -50,7 +50,7 @@ pub async fn get_station_available_downloads(
     Ok(res)
 }
 
-pub async fn get_datatype_historic_files(
+pub async fn get_historic_files(
     data_type: StationDataType,
 ) -> Result<Vec<StationFile>, Box<dyn std::error::Error>> {
     // This function returns a list of all downloadable historic files for a specified data_type (eg. stdmet, cwind, swden)
@@ -58,7 +58,7 @@ pub async fn get_datatype_historic_files(
     let url: String =
         "".to_string() + "https://www.ndbc.noaa.gov/data/historical/" + data_type.as_str();
     let re = Regex::new(
-        r###"<tr><td valign="top"><img src="/icons/compressed.gif" alt="\[   \]"></td><td><a href="(.{5,50})">(.{5,50})</a></td><td align="right">(.{5,50})  </td><td align="right"> (.{1,50})</td><td>&nbsp;</td></tr>"###,
+        r###"<tr><td valign="top"><img src="/icons/compressed.gif" alt="\[   \]"></td><td><a href="(.{5,50})">(.{5,50})</a></td><td align="right">(.{5,50})</td><td align="right">(.{1,50})</td><td>(.{1,50})</td></tr>"###,
     )
     .unwrap();
 
@@ -67,9 +67,9 @@ pub async fn get_datatype_historic_files(
     let res = re
         .captures_iter(&body)
         .map(|c| c.extract())
-        .map(|(_, [f, _, _, _])| StationFile {
+        .map(|(_, [f, _, _, _, _])| StationFile {
             filename: f.to_string(),
-            station: f[0..=4].to_string(),
+            station: f[0..=4].to_string().to_uppercase(),
             year: f[6..=9].to_string(),
         })
         .collect();
@@ -85,7 +85,7 @@ pub async fn get_station_historical_stdmet_data(
 
     let url: String = "".to_string()
         + "https://www.ndbc.noaa.gov/view_text_file.php?filename="
-        + station
+        + station.to_lowercase().as_str()
         + "h"
         + year
         + ".txt.gz"
@@ -93,7 +93,7 @@ pub async fn get_station_historical_stdmet_data(
         + StationDataType::StandardMeteorological.as_str()
         + "/";
     let re = Regex::new(
-        r"([0-9a-zA-Z\+\.-]+)[\s]+([0-9\+\.-]+)[\s]+([0-9\+\.-]+)[\s]+([0-9\+\.-]+)[\s]+([0-9\+\.-]+)[\s]+([0-9\+\.-]+)[\s]+([0-9\+\.-]+)[\s]+([0-9\+\.-]+)[\s]+([0-9\+\.-]+)[\s]+([0-9\+\.-]+)[\s]+([0-9\+\.-]+)[\s]+([0-9\+\.-]+)[\s]+([0-9\+\.-]+)[\s]+([0-9\+\.-]+)[\s]+([0-9\+\.-]+)[\s]+([0-9\+\.-]+)[\s]+([0-9\+\.-]+)[\s]+([0-9\+\.-]+)\n",
+        r"([0-9a-zA-Z\+\.-]+)[\s]+([0-9\+\.-]+)[\s]+([0-9\+\.-]+)[\s]+([0-9\+\.-]+)[\s]+([0-9\+\.-]+)[\s]+([0-9\+\.-]+)[\s]+([0-9\+\.-]+)[\s]+([0-9\+\.-]+)[\s]+([0-9\+\.-]+)[\s]+([0-9\+\.-]+)[\s]+([0-9\+\.-]+)[\s]+([0-9\+\.-]+)[\s]+([0-9\+\.-]+)[\s]+([0-9\+\.-]+)[\s]+([0-9\+\.-]+)[\s]+([0-9\+\.-]+)[\s]+([0-9\+\.-]+)[\s]+([0-9\+\.-]+)[\s]{0,}\n",
     )
     .unwrap();
 
@@ -103,9 +103,9 @@ pub async fn get_station_historical_stdmet_data(
         .captures_iter(&body)
         .map(|c| c.extract())
         .map(|(_, [year, month, day, hour, minute, wdir, wspd, gst, wvht, dpd, apd, mwd, pres, atmp, wtmp, dewp, vis, tide])| StationStdMetData {
-            station: station.to_string(),
+            station: station.to_string().to_uppercase(),
             timestamp: NaiveDateTime::parse_from_str(("".to_string() + year + "-" + month + "-" + day + " " + hour + ":" + minute).as_str(), "%Y-%m-%d %H:%M").unwrap(),
-            wdir: if wdir != "999" { Some(wdir.to_string()) } else {None} ,
+            wdir: if wdir != "999" { Some(wdir.to_string()) } else {None},
             wspd: if wspd != "99.0" { Some(wspd.to_string())} else {None},
             gst: if gst != "99.0" { Some(gst.to_string())} else {None},
             wvht: if wvht != "99.00" { Some(wvht.to_string())} else {None},
@@ -117,7 +117,7 @@ pub async fn get_station_historical_stdmet_data(
             wtmp: if wtmp != "99.0" { Some(wtmp.to_string())} else {None}, // unsure of null value
             dewp: if dewp != "999.0" { Some(dewp.to_string())} else {None},
             vis: if vis != "99.0" { Some(vis.to_string())} else {None},
-            tide: if tide != "99.0" { Some(tide.to_string())} else {None}
+            tide: if tide != "99.00" { Some(tide.to_string())} else {None}
         })
         .collect();
 
