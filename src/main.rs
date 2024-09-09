@@ -26,20 +26,20 @@ async fn service_active_stdmet_stations() -> Result<impl Responder, Box<dyn std:
     Ok(web::Json(active_stdmet_stations))
 }
 
-#[get("/station/{id}/{year}")]
-async fn service_station_stdmet_historic_data(path: web::Path<(String, String)>) -> Result<impl Responder, Box<dyn std::error::Error>> {
-    println!("service_station_stdmet_historic_data");
-    let (id, year) = path.into_inner();
-    let res = get_station_historical_stdmet_data(&id, &year).await?;
-
-    Ok(web::Json(res))
-}
-
 #[get("/station/{id}/realtime")]
 async fn service_station_stdmet_realtime_data(path: web::Path<String>) -> Result<impl Responder, Box<dyn std::error::Error>> {
     println!("service_station_stdmet_realtime_data");
     let id = path.into_inner();
     let res = get_station_realtime_stdmet_data(&id).await?;
+
+    Ok(web::Json(res))
+}
+
+#[get("/station/{id}/{year}")]
+async fn service_station_stdmet_historic_data(path: web::Path<(String, String)>) -> Result<impl Responder, Box<dyn std::error::Error>> {
+    println!("service_station_stdmet_historic_data");
+    let (id, year) = path.into_inner();
+    let res = get_station_historical_stdmet_data(&id, &year).await?;
 
     Ok(web::Json(res))
 }
