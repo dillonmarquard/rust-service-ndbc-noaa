@@ -129,26 +129,3 @@ pub async fn get_station_historical_stdmet_data(
 
     Ok(res)
 }
-
-// This is a streaming iterator to process batches of stdmet files from a list of stations.
-// This was deprecated because historic::get_datatype_historic_files which pulls all files for a given data_type by parsing the directory.
-// Code will be useful for async pulling the raw data from a list of files
-
-// let station_metadata = get_stations_metadata().await?;
-// let stations_available_history = stream::iter(station_metadata.stations.iter().map(
-//     |station| async {
-//         let mut rng = rand::thread_rng();
-//         let distribution = Uniform::from(0..500);
-//         let delay = distribution.sample(&mut rng);
-//         // let id = &station.id;
-//         // println!("id: {id:?} delay: {delay:?}");
-//         thread::sleep(time::Duration::from_millis(delay));
-//         get_station_available_history(&station.id, StationDataType::StandardMeteorological)
-//             .await
-//     },
-// ))
-// .buffer_unordered(10)
-// .try_collect::<Vec<Vec<StationFile>>>()
-// .await?;
-
-// println!("{stations_available_history:#?}");
