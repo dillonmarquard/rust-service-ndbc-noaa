@@ -2,12 +2,15 @@ use chrono::NaiveDateTime;
 use regex::Regex;
 use serde_xml_rs::from_str;
 
-use super::ndbc_schema::{
+use crate::ndbc::ndbc_schema::{
     StationDataType, StationFile, StationMetadata, StationStdMetData, StationsMetadataResponse,
 };
 
+use log::info;
+
 pub async fn get_stations_metadata() -> Result<Vec<StationMetadata>, Box<dyn std::error::Error>> {
     // This function returns the historical station metadata back to 2000 for all stations on the NDBC.
+    info!("called get_stations_metadata");
 
     let url: &str = "https://www.ndbc.noaa.gov/metadata/stationmetadata.xml";
 
@@ -24,6 +27,7 @@ pub async fn get_station_available_downloads(
 ) -> Result<Vec<StationFile>, Box<dyn std::error::Error>> {
     // This function returns a list of historic files for the given station and data_type (eg. stdmet, cwind, swden)
     // Please use get_datatype_historic_files and filter the desired stations to avoid spamming the resource.
+    info!("called get_station_available_downloads");
 
     let url: String = format!("https://www.ndbc.noaa.gov/station_history.php?station={station}");
     let re = Regex::new(
@@ -54,6 +58,7 @@ pub async fn get_historic_files(
     data_type: StationDataType,
 ) -> Result<Vec<StationFile>, Box<dyn std::error::Error>> {
     // This function returns a list of all downloadable historic files for a specified data_type (eg. stdmet, cwind, swden)
+    info!("called get_historic_files");
 
     let url: String =
         "".to_string() + "https://www.ndbc.noaa.gov/data/historical/" + data_type.as_str();
@@ -82,6 +87,7 @@ pub async fn get_station_historical_stdmet_data(
     year: &str,
 ) -> Result<Vec<StationStdMetData>, Box<dyn std::error::Error>> {
     // This function returns the historic raw stdmet sensor data for a given station over a given year.
+    info!("called get_station_historical_stdmet_data");
 
     let url: String = "".to_string()
         + "https://www.ndbc.noaa.gov/view_text_file.php?filename="

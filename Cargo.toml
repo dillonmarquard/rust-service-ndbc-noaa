@@ -6,7 +6,9 @@ edition = "2021"
 [dependencies]
 actix-web = "4.9.0"
 chrono = { version = "0.4.38", features = ["serde"] }
+env_logger = "0.11.5"
 futures = "0.3.30"
+log = "0.4.22"
 parquet = "52.2.0"
 rand = "0.8.5"
 regex = "1.10.6"
@@ -14,3 +16,8 @@ reqwest = "0.12.5"
 serde = { version = "1.0.205", features = ["derive"] }
 serde-xml-rs = "0.6.0"
 tokio = { version = "1.39.2", features = ["io-std", "macros", "rt", "rt-multi-thread"] }
+
+[[bin]]
+name = "web"
+path = "src/bin/web.rs"
+
