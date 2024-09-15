@@ -8,7 +8,7 @@ use ndbc::{
     realtime::{get_active_stations, get_station_realtime_stdmet_data},
 };
 
-#[get("/active")]
+#[get("/station")]
 async fn service_active_stations() -> Result<impl Responder, Box<dyn std::error::Error>> {
     info!("service_active_stations");
     let active_stations = get_active_stations().await?;
@@ -20,7 +20,7 @@ async fn service_active_stations() -> Result<impl Responder, Box<dyn std::error:
     Ok(web::Json(active_stations))
 }
 
-#[get("/active/stdmet")]
+#[get("/station/stdmet")]
 async fn service_active_stdmet_stations() -> Result<impl Responder, Box<dyn std::error::Error>> {
     info!("service_active_stdmet_stations");
     let active_stations = get_active_stations().await?;
@@ -31,6 +31,26 @@ async fn service_active_stdmet_stations() -> Result<impl Responder, Box<dyn std:
 
     if active_stdmet_stations.is_empty() {
         warn!("No active stdmet stations were found");
+    }
+
+    Ok(web::Json(active_stdmet_stations))
+}
+
+#[get("/station/{id}")]
+async fn service_station_metadata(
+    path: web::Path<String>,
+) -> Result<impl Responder, Box<dyn std::error::Error>> {
+    info!("service_station_stdmet_historic_data");
+
+    let id= path.into_inner();
+    let active_stations = get_active_stations().await?;
+    let active_stdmet_stations: Vec<Station> = active_stations
+        .into_iter()
+        .filter(|s| s.id == id)
+        .collect();
+
+    if active_stdmet_stations.is_empty() {
+        warn!("No metadata was found for station: {id}");
     }
 
     Ok(web::Json(active_stdmet_stations))
@@ -77,6 +97,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         App::new()
             .service(service_active_stations)
             .service(service_active_stdmet_stations)
+            .service(service_station_metadata)
             .service(service_station_stdmet_realtime_data) // pattern match takes order from service declaration
             .service(service_station_stdmet_historic_data) // overlapping patterns should be ordered with special routes first eg. /station/ABC/realtime then /station/ABC/2023
     })

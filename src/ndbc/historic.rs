@@ -120,7 +120,7 @@ pub async fn get_station_historical_stdmet_data(
             mwd: if mwd != "999" { Some(mwd.to_string())} else {None},
             pres: if pres != "9999.0" { Some(pres.to_string())} else {None},
             atmp: if atmp != "999.0" { Some(atmp.to_string())} else {None},
-            wtmp: if wtmp != "99.0" { Some(wtmp.to_string())} else {None}, // unsure of null value
+            wtmp: if wtmp != "999.0" { Some(wtmp.to_string())} else {None},
             dewp: if dewp != "999.0" { Some(dewp.to_string())} else {None},
             vis: if vis != "99.0" { Some(vis.to_string())} else {None},
             tide: if tide != "99.00" { Some(tide.to_string())} else {None}
