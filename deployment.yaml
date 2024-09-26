@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rust-ndbc-deployment
+  labels:
+    app: rust-ndbc-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rust-ndbc-app
+  template:
+    metadata:
+      labels:
+        app: rust-ndbc-app
+    spec:
+      containers:
+      - name: rust-ndbc-app
+        image: rust-ndbc-wrapper:latest
+        ports:
+        - containerPort: 80
+          name: http-web-svc
+        resources:
+          requests:
+            memory: "100Mi"
+            cpu: "250m"
+          limits:
+            memory: "250Mi"
+            cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rust-ndbc-service
+spec:
+  type: ClusterIP
+  selector:
+    app: rust-ndbc-app
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: http-web-svc  
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rust-ndbc-ingress
+  annotations:
+    ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: rust-ndbc-service
+            port:
+              number: 80
+      

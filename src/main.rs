@@ -101,7 +101,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .service(service_station_stdmet_realtime_data) // pattern match takes order from service declaration
             .service(service_station_stdmet_historic_data) // overlapping patterns should be ordered with special routes first eg. /station/ABC/realtime then /station/ABC/2023
     })
-    .bind(("127.0.0.1", 8080))?
+    .bind(("0.0.0.0", 80))?
     .run()
     .await?;
 

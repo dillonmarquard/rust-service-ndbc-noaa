@@ -1,5 +1,5 @@
 [package]
-name = "surf-quality-estimator"
+name = "rust-ndbc-wrapper"
 version = "0.1.0"
 edition = "2021"
 

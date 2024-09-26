@@ -1429,6 +1429,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "rust-ndbc-wrapper"
+version = "0.1.0"
+dependencies = [
+ "actix-web",
+ "chrono",
+ "env_logger",
+ "futures",
+ "log",
+ "regex",
+ "reqwest",
+ "serde",
+ "serde-xml-rs",
+ "tokio",
+]
+
+[[package]]
 name = "rustc-demangle"
 version = "0.1.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1658,22 +1674,6 @@ name = "subtle"
 version = "2.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
-
-[[package]]
-name = "surf-quality-estimator"
-version = "0.1.0"
-dependencies = [
- "actix-web",
- "chrono",
- "env_logger",
- "futures",
- "log",
- "regex",
- "reqwest",
- "serde",
- "serde-xml-rs",
- "tokio",
-]
 
 [[package]]
 name = "syn"
