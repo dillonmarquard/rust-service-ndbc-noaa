@@ -1,7 +1,22 @@
 # rust-service-ndbc-noaa
 A Rust Service for the National Data Bouy Center's API and Web-interface.
 
+### Dependencies
 
+* Rust ^1.81
+
+### Endpoints
+
+* station
+    * metadata for all active stations
+* station/stdmet
+    * metadata for all active standard meteorological stations
+* station/{id}
+    * metadata for a specific station
+* station/{id}/{year}
+    * historic sensor data for the specified station
+* station/{id}/realtime
+    * realtime (last 45 days) sensor data for the specified station
 
 ### Deployment
 #### Docker
@@ -21,15 +36,3 @@ k3d image import rust-service-ndbc-noaa -c demo-cluster
 kubectl apply -f deployment.yaml
 ```
 
-### Endpoints
-
-* station
-    * metadata for all active stations
-* station/stdmet
-    * metadata for all active standard meteorological stations
-* station/{id}
-    * metadata for a specific station
-* station/{id}/{year}
-    * historic sensor data for the specified station
-* station/{id}/realtime
-    * realtime (last 45 days) sensor data for the specified station
