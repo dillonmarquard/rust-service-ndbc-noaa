@@ -6,5 +6,5 @@ RUN cargo install --path .
 FROM debian:latest
 RUN apt-get update && apt-get upgrade && apt-get install -y openssl && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /usr/local/cargo/bin/rust-service-ndbc-noaa /usr/local/bin/rust-service-ndbc-noaa
-EXPOSE 80
+EXPOSE 3001
 CMD ["rust-service-ndbc-noaa"]

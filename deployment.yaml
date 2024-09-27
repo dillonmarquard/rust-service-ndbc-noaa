@@ -39,7 +39,7 @@ spec:
     app: rust-ndbc-app
   ports:
     - protocol: TCP
-      port: 80
+      port: 3001
       targetPort: http-web-svc
 ---
 apiVersion: networking.k8s.io/v1
@@ -58,5 +58,5 @@ spec:
           service:
             name: rust-ndbc-service
             port:
-              number: 80
+              number: 3001
           
