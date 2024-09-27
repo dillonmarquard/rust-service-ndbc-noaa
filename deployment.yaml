@@ -16,16 +16,17 @@ spec:
     spec:
       containers:
       - name: rust-ndbc-app
-        image: rust-ndbc-wrapper:latest
+        image: rust-service-ndbc-noaa:latest
+        imagePullPolicy: Never # use locally built image
         ports:
         - containerPort: 80
           name: http-web-svc
         resources:
           requests:
-            memory: "100Mi"
+            memory: "500Mi"
             cpu: "250m"
           limits:
-            memory: "250Mi"
+            memory: "1000Mi"
             cpu: "500m"
 ---
 apiVersion: v1
@@ -39,7 +40,7 @@ spec:
   ports:
     - protocol: TCP
       port: 80
-      targetPort: http-web-svc  
+      targetPort: http-web-svc
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -58,4 +59,4 @@ spec:
             name: rust-ndbc-service
             port:
               number: 80
-      
+          

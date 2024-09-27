@@ -35,9 +35,9 @@ where
 pub struct Station {
     #[serde(default, deserialize_with = "deserialize_string_upper")]
     pub id: String,
-    pub lat: Option<String>,
-    pub lon: Option<String>,
-    pub elev: Option<String>,
+    pub lat: Option<f32>,
+    pub lon: Option<f32>,
+    pub elev: Option<f32>,
     pub name: Option<String>,
     pub owner: Option<String>,
     pub pgm: Option<String>,

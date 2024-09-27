@@ -1429,7 +1429,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "rust-ndbc-wrapper"
+name = "rust-service-ndbc-noaa"
 version = "0.1.0"
 dependencies = [
  "actix-web",
