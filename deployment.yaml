@@ -59,4 +59,4 @@ spec:
             name: rust-ndbc-service
             port:
               number: 3001
-          
+    
