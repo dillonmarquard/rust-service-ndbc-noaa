@@ -1,4 +1,4 @@
-pub mod ndbc;
+mod ndbc;
 
 use actix_web::{get, web, App, HttpServer, Responder};
 use log::{info, warn};
@@ -11,7 +11,7 @@ use ndbc::{
 #[get("/station")]
 async fn service_active_stations() -> Result<impl Responder, Box<dyn std::error::Error>> {
     info!("service_active_stations");
-    let active_stations = get_active_stations().await?;
+    let active_stations: Vec<Station> = get_active_stations().await?;
 
     if active_stations.is_empty() {
         warn!("No active stations were found");
@@ -23,10 +23,10 @@ async fn service_active_stations() -> Result<impl Responder, Box<dyn std::error:
 #[get("/station/stdmet")]
 async fn service_active_stdmet_stations() -> Result<impl Responder, Box<dyn std::error::Error>> {
     info!("service_active_stdmet_stations");
-    let active_stations = get_active_stations().await?;
+    let active_stations: Vec<Station> = get_active_stations().await?;
     let active_stdmet_stations: Vec<Station> = active_stations
         .into_iter()
-        .filter(|s| s.met.is_some_and(|x| x))
+        .filter(|s: &Station| s.met.is_some_and(|x: bool| x))
         .collect();
 
     if active_stdmet_stations.is_empty() {
@@ -42,11 +42,11 @@ async fn service_station_metadata(
 ) -> Result<impl Responder, Box<dyn std::error::Error>> {
     info!("service_station_stdmet_historic_data");
 
-    let id= path.into_inner();
-    let active_stations = get_active_stations().await?;
+    let id: String= path.into_inner();
+    let active_stations: Vec<Station> = get_active_stations().await?;
     let active_stdmet_stations: Vec<Station> = active_stations
         .into_iter()
-        .filter(|s| s.id == id)
+        .filter(|s: &Station| s.id == id)
         .collect();
 
     if active_stdmet_stations.is_empty() {
@@ -61,8 +61,8 @@ async fn service_station_stdmet_realtime_data(
     path: web::Path<String>,
 ) -> Result<impl Responder, Box<dyn std::error::Error>> {
     info!("service_station_stdmet_realtime_data");
-    let id = path.into_inner();
-    let res = get_station_realtime_stdmet_data(&id).await?;
+    let id: String = path.into_inner();
+    let res: Vec<ndbc::ndbc_schema::StationStdMetData> = get_station_realtime_stdmet_data(&id).await?;
 
     if res.is_empty() {
         warn!("No realtime stdmet data was found for the station: {id}");
@@ -77,7 +77,7 @@ async fn service_station_stdmet_historic_data(
 ) -> Result<impl Responder, Box<dyn std::error::Error>> {
     info!("service_station_stdmet_historic_data");
     let (id, year) = path.into_inner();
-    let res = get_station_historical_stdmet_data(&id, &year).await?;
+    let res: Vec<ndbc::ndbc_schema::StationStdMetData> = get_station_historical_stdmet_data(&id, &year).await?;
 
     if res.is_empty() {
         warn!("No stdmet data was found for the station: {id} for the year of {year}");
@@ -99,7 +99,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .service(service_active_stdmet_stations)
             .service(service_station_metadata)
             .service(service_station_stdmet_realtime_data) // pattern match takes order from service declaration
-            .service(service_station_stdmet_historic_data) // overlapping patterns should be ordered with special routes first eg. /station/ABC/realtime then /station/ABC/2023
+            .service(service_station_stdmet_historic_data) // overlapping patterns should be ordered with special routes first (eg. /station/ABC/realtime vs. /station/ABC/2023)
     })
     .bind(("0.0.0.0", 80))?
     .run()
