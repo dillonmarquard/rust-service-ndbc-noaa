@@ -3,8 +3,8 @@ mod ndbc;
 use actix_web::{get, web, App, HttpServer, Responder};
 use log::{info, warn};
 use ndbc::{
-    historic::get_station_historical_stdmet_data,
-    ndbc_schema::Station,
+    historic::{self, get_historic_files, get_station_historical_stdmet_data},
+    ndbc_schema::{Station, StationDataType, StationFile},
     realtime::{get_active_stations, get_station_realtime_stdmet_data},
 };
 
@@ -34,6 +34,29 @@ async fn service_active_stdmet_stations() -> Result<impl Responder, Box<dyn std:
     }
 
     Ok(web::Json(active_stdmet_stations))
+}
+
+#[get("/station/currents")]
+async fn service_active_currents_stations() -> Result<impl Responder, Box<dyn std::error::Error>> {
+    info!("service_active_currents_stations");
+    let active_stations: Vec<Station> = get_active_stations().await?;
+    let active_currents_stations: Vec<Station> = active_stations
+        .into_iter()
+        .filter(|s: &Station| s.currents.is_some_and(|x: bool| x))
+        .collect();
+
+    if active_currents_stations.is_empty() {
+        warn!("No active currents stations were found");
+    }
+
+    Ok(web::Json(active_currents_stations))
+}
+
+#[get("/history/stdmet")]
+async fn service_historic_stdmet_files() -> Result<impl Responder, Box<dyn std::error::Error>> {
+    let historic_files: Vec<StationFile> = get_historic_files(StationDataType::StandardMeteorological).await?;
+
+    Ok(web::Json(historic_files))
 }
 
 #[get("/station/{id}")]
@@ -97,7 +120,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         App::new()
             .service(service_active_stations)
             .service(service_active_stdmet_stations)
+            .service(service_active_currents_stations)
             .service(service_station_metadata)
+            .service(service_historic_stdmet_files)
             .service(service_station_stdmet_realtime_data) // pattern match takes order from service declaration
             .service(service_station_stdmet_historic_data) // overlapping patterns should be ordered with special routes first (eg. /station/ABC/realtime vs. /station/ABC/2023)
     })
