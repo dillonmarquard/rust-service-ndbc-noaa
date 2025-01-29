@@ -3,9 +3,9 @@ mod ndbc;
 use actix_web::{get, web, App, HttpServer, Responder};
 use log::{info, warn};
 use ndbc::{
-    historic::{self, get_historic_files, get_station_historical_stdmet_data},
+    historic::{get_historic_files, get_station_historical_stdmet_data, get_station_available_downloads},
     ndbc_schema::{Station, StationDataType, StationFile},
-    realtime::{get_active_stations, get_station_realtime_stdmet_data},
+    realtime::{get_active_stations, get_station_realtime_stdmet_data, get_station_realtime_stdmetdrift_data},
 };
 
 #[get("/station")]
@@ -17,46 +17,28 @@ async fn service_active_stations() -> Result<impl Responder, Box<dyn std::error:
         warn!("No active stations were found");
     }
 
-    Ok(web::Json(active_stations))
-}
+    let historic_data = get_historic_files(StationDataType::StandardMeteorological).await?;
 
-#[get("/station/stdmet")]
-async fn service_active_stdmet_stations() -> Result<impl Responder, Box<dyn std::error::Error>> {
-    info!("service_active_stdmet_stations");
-    let active_stations: Vec<Station> = get_active_stations().await?;
-    let active_stdmet_stations: Vec<Station> = active_stations
+    let enhanced_stations: Vec<Station> = active_stations
         .into_iter()
-        .filter(|s: &Station| s.met.is_some_and(|x: bool| x))
+        .map(| mut s: Station | {
+            let tmp: Vec<String> = historic_data
+            .iter()
+            .filter(|d: &&StationFile| d.station == s.id)
+            .map(| x: &StationFile | x.clone().year)
+            .collect();
+            
+            if tmp.is_empty() {
+                warn!("No historic data was found for station: {}", &s.id);
+            } else {
+                s.stdmet_history = Some(tmp);
+            }
+
+            s
+        })
         .collect();
-
-    if active_stdmet_stations.is_empty() {
-        warn!("No active stdmet stations were found");
-    }
-
-    Ok(web::Json(active_stdmet_stations))
-}
-
-#[get("/station/currents")]
-async fn service_active_currents_stations() -> Result<impl Responder, Box<dyn std::error::Error>> {
-    info!("service_active_currents_stations");
-    let active_stations: Vec<Station> = get_active_stations().await?;
-    let active_currents_stations: Vec<Station> = active_stations
-        .into_iter()
-        .filter(|s: &Station| s.currents.is_some_and(|x: bool| x))
-        .collect();
-
-    if active_currents_stations.is_empty() {
-        warn!("No active currents stations were found");
-    }
-
-    Ok(web::Json(active_currents_stations))
-}
-
-#[get("/history/stdmet")]
-async fn service_historic_stdmet_files() -> Result<impl Responder, Box<dyn std::error::Error>> {
-    let historic_files: Vec<StationFile> = get_historic_files(StationDataType::StandardMeteorological).await?;
-
-    Ok(web::Json(historic_files))
+    
+    Ok(web::Json(enhanced_stations))
 }
 
 #[get("/station/{id}")]
@@ -65,21 +47,47 @@ async fn service_station_metadata(
 ) -> Result<impl Responder, Box<dyn std::error::Error>> {
     info!("service_station_stdmet_historic_data");
 
-    let id: String= path.into_inner();
+    let id: String = path.into_inner();
     let active_stations: Vec<Station> = get_active_stations().await?;
-    let active_stdmet_stations: Vec<Station> = active_stations
+    let mut active_stdmet_stations: Vec<Station> = active_stations
         .into_iter()
         .filter(|s: &Station| s.id == id)
         .collect();
 
+    let historic_data: Vec<String> = get_station_available_downloads(&id, StationDataType::StandardMeteorological).await?
+        .into_iter()
+        .map(| x: StationFile | x.year)
+        .collect();
+    
     if active_stdmet_stations.is_empty() {
         warn!("No metadata was found for station: {id}");
+    }
+
+    if historic_data.is_empty() {
+        warn!("No historic stdmet data was found for station: {id}");
+    } else {
+        active_stdmet_stations[0].stdmet_history = Some(historic_data);
     }
 
     Ok(web::Json(active_stdmet_stations))
 }
 
-#[get("/station/{id}/realtime")]
+#[get("/station/{id}/stdmet/{year}")]
+async fn service_station_stdmet_historic_data(
+    path: web::Path<(String, String)>,
+) -> Result<impl Responder, Box<dyn std::error::Error>> {
+    info!("service_station_stdmet_historic_data");
+    let (id, year) = path.into_inner();
+    let res: Vec<ndbc::ndbc_schema::StationStdMetData> = get_station_historical_stdmet_data(&id, &year).await?;
+
+    if res.is_empty() {
+        warn!("No stdmet data was found for the station: {id} for the year of {year}");
+    }
+
+    Ok(web::Json(res))
+}
+
+#[get("/station/{id}/stdmet/realtime")]
 async fn service_station_stdmet_realtime_data(
     path: web::Path<String>,
 ) -> Result<impl Responder, Box<dyn std::error::Error>> {
@@ -94,16 +102,16 @@ async fn service_station_stdmet_realtime_data(
     Ok(web::Json(res))
 }
 
-#[get("/station/{id}/{year}")]
-async fn service_station_stdmet_historic_data(
-    path: web::Path<(String, String)>,
+#[get("/station/{id}/stdmetdrift/realtime")]
+async fn service_station_stdmetdrift_realtime_data(
+    path: web::Path<String>,
 ) -> Result<impl Responder, Box<dyn std::error::Error>> {
-    info!("service_station_stdmet_historic_data");
-    let (id, year) = path.into_inner();
-    let res: Vec<ndbc::ndbc_schema::StationStdMetData> = get_station_historical_stdmet_data(&id, &year).await?;
+    info!("service_station_stdmetdrift_realtime_data");
+    let id: String = path.into_inner();
+    let res: Vec<ndbc::ndbc_schema::StationStdMetData> = get_station_realtime_stdmetdrift_data(&id).await?;
 
     if res.is_empty() {
-        warn!("No stdmet data was found for the station: {id} for the year of {year}");
+        warn!("No realtime stdmetdrift data was found for the station: {id}");
     }
 
     Ok(web::Json(res))
@@ -119,11 +127,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     HttpServer::new(|| {
         App::new()
             .service(service_active_stations)
-            .service(service_active_stdmet_stations)
-            .service(service_active_currents_stations)
             .service(service_station_metadata)
-            .service(service_historic_stdmet_files)
             .service(service_station_stdmet_realtime_data) // pattern match takes order from service declaration
+            .service(service_station_stdmetdrift_realtime_data)
             .service(service_station_stdmet_historic_data) // overlapping patterns should be ordered with special routes first (eg. /station/ABC/realtime vs. /station/ABC/2023)
     })
     .bind(("0.0.0.0", 80))?

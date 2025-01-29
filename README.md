@@ -5,38 +5,25 @@ A Rust Service for the National Data Bouy Center's API and Web-interface.
 
 * Rust ^1.81
 
-### Endpoints (current state)
-
-* station
-    * metadata for all active stations
-* station/stdmet
-    * metadata for all active standard meteorological stations
-* station/currents
-    * metadata for all active standard meteorological stations
-* station/{id}
-    * metadata for a specific station
-* station/{id}/{year}
-    * historic sensor data for the specified station
-* station/{id}/realtime
-    * realtime (last 45 days) sensor data for the specified station
-
-### Endpoints (future state)
+### Endpoints
 
 * /station
    * metadata for all active stations
 * /station/{id}
     * metadata for a specific station
-    * historic data available for download? (future consideration)
-        * `get_station_available_downloads(...)` can be used to pull only a specific station's historic data 
+    * historic stdmet data available for download
 * /station/{id}/stdmet (future consideration)
     * all historic Standard Meteorological sensor data for the specified station
-* /station/{id}/stdmet/{year} (migration)
+* /station/{id}/stdmet/{year}
     * historic Standard Meteorological sensor data for the specified station and year
-    * if no year is filtered it will provide all historic data
-* /station/{id}/stdmet/realtime (migration)
-    * realtime (last 45 days) sensor data for the specified station
+* /station/{id}/stdmet/realtime
+    * realtime (last 45 days) stdmet sensor data for the specified station
+* /station/{id}/stdmetdrift/realtime
+    * realtime (last 45 days) stdmet drift sensor data for the specified station
+    * drifting buoys do not provide stdmet data in the same format
+    * other realtime formats will be supported in the future eg. ocean
 
-* filters
+* filters (future consideration)
     * available data eg. `/station?available=stdmet` or `/station?available=currents`
     * distance from point (lat + lon) eg. `/station?lat=10&lon=4&dist=1`
 

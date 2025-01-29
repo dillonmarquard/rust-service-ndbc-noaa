@@ -21,6 +21,7 @@ pub async fn get_station_realtime_stdmet_data(
     station: &str,
 ) -> Result<Vec<StationStdMetData>, Box<dyn std::error::Error>> {
     // This function returns the raw stdmet sensor data for a given station over the last 45 days.
+    // This only collects data for stationary buoys, there is a separate function to grab drifting buoy stdmet sensor data.
 
     let url: String = "".to_string()
         + "https://www.ndbc.noaa.gov/data/realtime2/"
@@ -53,6 +54,52 @@ pub async fn get_station_realtime_stdmet_data(
                 dewp: if dewp != "MM" { Some(dewp.to_string())} else {None},
                 vis: if vis != "MM" { Some(vis.to_string())} else {None},
                 tide: if tide != "MM" { Some(tide.to_string())} else {None}
+            }
+        )
+        .collect();
+
+    Ok(res)
+}
+
+pub async fn get_station_realtime_stdmetdrift_data(
+    station: &str,
+) -> Result<Vec<StationStdMetData>, Box<dyn std::error::Error>> {
+    // This function returns the raw stdmet sensor data for a given station over the last 45 days.
+    // This only collects data for stationary buoys, there is a separate function to grab drifting buoy stdmet sensor data.
+
+    let url: String = "".to_string()
+        + "https://www.ndbc.noaa.gov/data/realtime2/"
+        + station.to_lowercase().as_str()
+        + ".drift";
+    let re = Regex::new(
+        r"([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)[\s]+([0-9M\+\.-]+)\n",
+    )
+    .unwrap();
+
+    let body = reqwest::get(url).await?.text().await?;
+
+    let res = re
+        .captures_iter(&body)
+        .map(|c| c.extract())
+        .map(|(_, [year, month, day, hourminute, _lat, _lon, wdir, gst, wspd, pres, _ptdy, atmp, wtmp, dewp, wvht, dpd])| 
+            StationStdMetData { 
+                // reuse stdmet struct even though some data is dropped 
+                // consider either creating a new struct for drifting buoys or extend the current struct
+                station: station.to_string().to_uppercase(),
+                timestamp: NaiveDateTime::parse_from_str(("".to_string() + year + "-" + month + "-" + day + " " + hourminute).as_str(), "%Y-%m-%d %H%M").unwrap(),
+                wdir: if wdir != "MM" { Some(wdir.to_string()) } else {None} ,
+                wspd: if wspd != "MM" { Some(wspd.to_string())} else {None},
+                gst: if gst != "MM" { Some(gst.to_string())} else {None},
+                wvht: if wvht != "MM" { Some(wvht.to_string())} else {None},
+                dpd: if dpd != "MM" { Some(dpd.to_string())} else {None},
+                apd: None,
+                mwd: None,
+                pres: if pres != "MM" { Some(pres.to_string())} else {None},
+                atmp: if atmp != "MM" { Some(atmp.to_string())} else {None},
+                wtmp: if wtmp != "MM" { Some(wtmp.to_string())} else {None},
+                dewp: if dewp != "MM" { Some(dewp.to_string())} else {None},
+                vis: None,
+                tide: None,
             }
         )
         .collect();

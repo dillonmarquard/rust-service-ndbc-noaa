@@ -26,7 +26,7 @@ pub async fn get_station_available_downloads(
     data_type: StationDataType,
 ) -> Result<Vec<StationFile>, Box<dyn std::error::Error>> {
     // This function returns a list of historic files for the given station and data_type (eg. stdmet, cwind, swden)
-    // Please use get_datatype_historic_files and filter the desired stations to avoid spamming the resource.
+    // Please use get_historic_files and filter the desired stations to avoid spamming the resource.
     info!("called get_station_available_downloads");
 
     let url: String = format!("https://www.ndbc.noaa.gov/station_history.php?station={station}");
