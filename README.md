@@ -1,12 +1,14 @@
 # rust-service-ndbc-noaa
 A Rust Service for the National Data Bouy Center's API and Web-interface.
 
-### Dependencies
+### Useful Resources
+Any questions regarding the meaning of an attribute or measurement can be found in the ndbc website.  
+* https://www.ndbc.noaa.gov/faq/
 
+### Dependencies
 * Rust ^1.81
 
 ### Endpoints
-
 * /station
    * metadata for all active stations
 * /station/{id}
@@ -23,10 +25,13 @@ A Rust Service for the National Data Bouy Center's API and Web-interface.
     * drifting buoys do not provide stdmet data in the same format
     * other realtime formats will be supported in the future eg. ocean
 
+### Future Considerations
+I hope to continue development to make more than just stdmet and stdmet drift data available.
+* ocean, cwinds, etc.
 * filters (future consideration)
     * available data eg. `/station?available=stdmet` or `/station?available=currents`
     * distance from point (lat + lon) eg. `/station?lat=10&lon=4&dist=1`
-
+ 
 ### Deployment
 #### Docker
 The core webserver for any deployment.
