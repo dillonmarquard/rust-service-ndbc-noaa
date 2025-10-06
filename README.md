@@ -2,11 +2,16 @@
 A Rust Service for the National Data Bouy Center's API and Web-interface.
 
 ### Useful Resources
-Any questions regarding the meaning of an attribute or measurement can be found in the ndbc website.  
+Any questions regarding the meaning of an attribute or measurement can be found on the NDBC website.  
 * https://www.ndbc.noaa.gov/faq/
-
+* Useful Buoy https://www.ndbc.noaa.gov/station_history.php?station=46014
 ### Dependencies
 * Rust ^1.81
+
+### NDBC NOAA Buoy Data
+## Payload Formats
+* https://www.ndbc.noaa.gov/faq/rsa.shtml
+* https://www.ndbc.noaa.gov/data/historical
 
 ### Endpoints
 * /station
@@ -24,10 +29,11 @@ Any questions regarding the meaning of an attribute or measurement can be found 
     * realtime (last 45 days) stdmet drift sensor data for the specified station
     * drifting buoys do not provide stdmet data in the same format
     * other realtime formats will be supported in the future eg. ocean
+* /station/{id}/cwind
+* /station/{id}/cwind/realtime
 
 ### Future Considerations
-I hope to continue development to make more than just stdmet and stdmet drift data available.
-* ocean, cwinds, etc.
+* future data will be considered in order: ocean current, spectral wave, oceanographic,  
 * filters (future consideration)
     * available data eg. `/station?available=stdmet` or `/station?available=currents`
     * distance from point (lat + lon) eg. `/station?lat=10&lon=4&dist=1`

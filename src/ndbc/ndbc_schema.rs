@@ -51,6 +51,13 @@ pub struct Station {
     #[serde(default, deserialize_with = "deserialize_bool")]
     pub dart: Option<bool>,
     pub stdmet_history: Option<Vec<String>>,
+    pub cwind_history: Option<Vec<String>>,
+    // pub swden_history: Option<Vec<String>>, //todo
+    // pub swdir_history: Option<Vec<String>>, //todo
+    // pub swdir2_history: Option<Vec<String>>, //todo
+    // pub swr1_history: Option<Vec<String>>, //todo
+    // pub swr2_history: Option<Vec<String>>, //todo
+    // pub srad_history: Option<Vec<String>>, //todo
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -100,6 +107,7 @@ pub struct StationFile {
 pub enum StationDataType {
     StandardMeteorological,
     ContinuousWinds,
+    OceanCurrent,
     SpectralWaveDensity,
     SpectralWaveA1Density,
     SpectralWaveA2Density,
@@ -113,6 +121,7 @@ impl StationDataType {
         match self {
             StationDataType::StandardMeteorological => "stdmet",
             StationDataType::ContinuousWinds => "cwind",
+            StationDataType::OceanCurrent => "adcp",
             StationDataType::SpectralWaveDensity => "swden",
             StationDataType::SpectralWaveA1Density => "swdir",
             StationDataType::SpectralWaveA2Density => "swdir2",
@@ -139,5 +148,42 @@ pub struct StationStdMetData {
     pub wtmp: Option<String>,
     pub dewp: Option<String>,
     pub vis: Option<String>,
+    pub ptdy: Option<String>,
     pub tide: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct StationContinuousWindsData {
+    pub station: String,
+    pub timestamp: NaiveDateTime,
+    pub wdir: Option<String>,
+    pub wspd: Option<String>,
+    pub gdr: Option<String>,
+    pub gst: Option<String>,
+}
+
+pub fn check_null_string(value: &str) -> bool {
+    match value {
+        "9" => true,
+        "9.0" => true,
+        "9.00" => true,
+        "9.000" => true,
+        "99" => true,
+        "99.0" => true,
+        "99.00" => true,
+        "99.000" => true,
+        "999" => true,
+        "999.0" => true,
+        "999.00" => true,
+        "999.000" => true,
+        "9999" => true,
+        "9999.0" => true,
+        "9999.00" => true,
+        "9999.000" => true,
+        "M" => true,
+        "MM" => true,
+        "MMM" => true,
+        "MMMM" => true,
+        _ => false,
+    }
 }
