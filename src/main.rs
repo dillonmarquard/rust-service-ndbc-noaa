@@ -28,10 +28,10 @@ async fn service_active_stations() -> Result<impl Responder, Box<dyn std::error:
     let mut enhanced_stations: Vec<Station> = active_stations
         .into_iter()
         .map(|mut s: Station| {
-            let tmp: Vec<String> = historic_data
+            let tmp: Vec<StationFile> = historic_data
                 .iter()
                 .filter(|d: &&StationFile| d.station == s.id)
-                .map(|x: &StationFile| x.clone().year)
+                .map(|x: &StationFile| x.clone())
                 .collect();
 
             if tmp.is_empty() {
@@ -49,10 +49,10 @@ async fn service_active_stations() -> Result<impl Responder, Box<dyn std::error:
     enhanced_stations = enhanced_stations
         .into_iter()
         .map(|mut s: Station| {
-            let tmp: Vec<String> = historic_data
+            let tmp: Vec<StationFile> = historic_data
                 .iter()
                 .filter(|d: &&StationFile| d.station == s.id)
-                .map(|x: &StationFile| x.clone().year)
+                .map(|x: &StationFile| x.clone())
                 .collect();
 
             if tmp.is_empty() {
@@ -81,19 +81,13 @@ async fn service_station_metadata(
         .filter(|s: &Station| s.id == id)
         .collect();
 
-    let historic_stdmet_data: Vec<String> =
+    let historic_stdmet_data: Vec<StationFile> =
         get_station_available_downloads(&id, StationDataType::StandardMeteorological)
-            .await?
-            .into_iter()
-            .map(|x: StationFile| x.year)
-            .collect();
+            .await?;
 
-    let historic_cwind_data: Vec<String> =
+    let historic_cwind_data: Vec<StationFile> =
         get_station_available_downloads(&id, StationDataType::ContinuousWinds)
-            .await?
-            .into_iter()
-            .map(|x: StationFile| x.year)
-            .collect();
+            .await?;
 
     if active_stdmet_stations.is_empty() && historic_cwind_data.is_empty() {
         warn!("No metadata was found for station: {id}");

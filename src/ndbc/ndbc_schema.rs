@@ -50,8 +50,8 @@ pub struct Station {
     pub waterquality: Option<bool>,
     #[serde(default, deserialize_with = "deserialize_bool")]
     pub dart: Option<bool>,
-    pub stdmet_history: Option<Vec<String>>,
-    pub cwind_history: Option<Vec<String>>,
+    pub stdmet_history: Option<Vec<StationFile>>,
+    pub cwind_history: Option<Vec<StationFile>>,
     // pub swden_history: Option<Vec<String>>, //todo
     // pub swdir_history: Option<Vec<String>>, //todo
     // pub swdir2_history: Option<Vec<String>>, //todo
