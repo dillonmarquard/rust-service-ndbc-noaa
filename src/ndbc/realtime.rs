@@ -2,21 +2,57 @@ use chrono::NaiveDateTime;
 use regex::Regex;
 use serde_xml_rs::from_str;
 
-use super::ndbc_schema::{ActiveStationsResponse, Station, StationStdMetData, StationContinuousWindsData, check_null_string};
+use super::ndbc_schema::{ActiveStationsResponse, Station, StationStdMetData, StationContinuousWindsData, StationDataType, StationRealtimeFile, check_null_string};
 
-use log::debug;
+use log::{debug, warn, error};
 
 pub async fn get_active_stations() -> Result<Vec<Station>, Box<dyn std::error::Error>> {
-    // This function returns a list of active stations.
+    // This function returns a list of all active stations.
     // just because a station is active does not mean it has stdmet data.
     debug!("get_active_stations");
     let url: &str = "https://www.ndbc.noaa.gov/activestations.xml";
+    debug!("url {}", &url);
 
     let body = reqwest::get(url).await?.text().await?;
 
     let res = from_str::<ActiveStationsResponse>(body.as_str()).unwrap();
 
     Ok(res.stations)
+}
+
+pub async fn get_realtime_files(
+    data_type: StationDataType,
+) -> Result<Vec<StationRealtimeFile>, Box<dyn std::error::Error>> {
+    // This function returns a list of all downloadable realtime files for a specified data_type (eg. stdmet, cwind, swden)
+    debug!("get_realtime_files");
+
+    let url: String =
+        "".to_string() + "https://www.ndbc.noaa.gov/data/realtime2/";
+    let re = Regex::new(
+        r###"<tr><td valign="top"><img src="/icons/text.gif" alt="\[TXT\]"></td><td><a href="(.{5,50})\.(.{2,50})">(.{5,50})</a></td><td align="right">(.{5,50})</td><td align="right">(.{1,50})</td><td>(.{1,50})</td></tr>"###,
+    )
+    .unwrap();    
+    debug!("url {}", &url);
+
+    let body = reqwest::get(url).await?.text().await?;
+
+    let res = re
+        .captures_iter(&body)
+        .map(|c| c.extract())
+        .map(|(_, [s, t, _, ts, _, _])| StationRealtimeFile {
+            filename: s.to_string() + "." + t,
+            station: s.to_string().to_uppercase(),
+            data_type: match t {
+                "txt" => StationDataType::StandardMeteorological,
+                "cwind" => StationDataType::ContinuousWinds,
+                _ => StationDataType::Unsupported,
+            },
+            timestamp: NaiveDateTime::parse_from_str(&ts.to_string().trim(),"%Y-%m-%d %H:%M").unwrap(),
+        })
+        .filter(|c| c.data_type == data_type)
+        .collect();
+
+    Ok(res)
 }
 
 pub async fn get_station_realtime_stdmet_data(
@@ -34,6 +70,7 @@ pub async fn get_station_realtime_stdmet_data(
         &(r"([0-9M\+\.-]+)[\s\n]+".repeat(19)),
     )
     .unwrap();
+    debug!("url {}", &url);
 
     let body = reqwest::get(url).await?.text().await?;
 
@@ -76,12 +113,13 @@ pub async fn get_station_realtime_stdmetdrift_data(
         + "https://www.ndbc.noaa.gov/data/realtime2/"
         + station.to_uppercase().as_str()
         + ".drift";
-    
+    debug!("{}",&url);
+
     let re = Regex::new(
         &(r"([0-9M\+\.-]+)[\s\n]+".repeat(16)),
     )
     .unwrap();
-
+    
     let body = reqwest::get(url).await?.text().await?;
 
     let res = re
@@ -124,7 +162,8 @@ pub async fn get_station_realtime_cwind_data(
         + "https://www.ndbc.noaa.gov/data/realtime2/"
         + station.to_uppercase().as_str()
         + ".cwind";
-    
+    debug!("{}",&url);
+
     let re = Regex::new(
         &(r"([0-9M\+\.-]+)[\s\n]+".repeat(10)),
     )

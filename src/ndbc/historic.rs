@@ -3,52 +3,56 @@ use regex::Regex;
 use serde_xml_rs::from_str;
 
 use super::ndbc_schema::{
-    StationDataType, StationFile, StationMetadata, StationStdMetData, StationsMetadataResponse,
+    StationDataType, StationHistoricFile, StationStdMetData,
     StationContinuousWindsData,
     check_null_string
 };
 
 use log::debug;
 
-pub async fn get_stations_metadata() -> Result<Vec<StationMetadata>, Box<dyn std::error::Error>> {
-    // This function returns the historical station metadata back to 2000 for all stations on the NDBC.
-    debug!("called get_stations_metadata");
+// pub async fn get_stations_metadata() -> Result<Vec<StationMetadata>, Box<dyn std::error::Error>> {
+//     // This function returns the historical station metadata back to 2000 for all stations on the NDBC.
+//     // This function is not currently used.
+//     debug!("called get_stations_metadata");
 
-    let url: &str = "https://www.ndbc.noaa.gov/metadata/stationmetadata.xml";
+//     let url: &str = "https://www.ndbc.noaa.gov/metadata/stationmetadata.xml";
+//     debug!("url {}", &url);
 
-    let body = reqwest::get(url).await?.text().await?;
+//     let body = reqwest::get(url).await?.text().await?;
 
-    let res = from_str::<StationsMetadataResponse>(body.as_str()).unwrap();
+//     let res = from_str::<StationsMetadataResponse>(body.as_str()).unwrap();
 
-    Ok(res.stations)
-}
+//     Ok(res.stations)
+// }
 
 pub async fn get_station_available_downloads(
     station: &str,
     data_type: StationDataType,
-) -> Result<Vec<StationFile>, Box<dyn std::error::Error>> {
+) -> Result<Vec<StationHistoricFile>, Box<dyn std::error::Error>> {
     // This function returns a list of historic files for the given station and data_type (eg. stdmet, cwind, swden)
-    // Please use get_historic_files and filter the desired stations to avoid spamming the resource.
+    // Please use get_historic_files for bulk lookup and filter the desired stations to avoid spamming the resource.
     debug!("called get_station_available_downloads");
 
     let url: String = format!("https://www.ndbc.noaa.gov/station_history.php?station={station}");
     let re = Regex::new(
         ("".to_string()
-            + r###"<a href="/download_data\.php\?filename=(.{5,25})\&dir=data/historical/"###
+            + r###"<a href="/download_data\.php\?filename=(.{5,25})\.(.{2,25})\&dir=data/historical/"###
             + data_type.as_str()
             + r###"/">(.{1,6})</a>"###)
             .as_str(),
     )
     .unwrap();
-
+    debug!("url {}", &url);
+    debug!("re {}", &re);
     let body = reqwest::get(url).await?.text().await?;
 
     let res = re
         .captures_iter(&body)
         .map(|c| c.extract())
-        .map(|(_, [f, y])| StationFile {
-            filename: f.to_string(),
-            station: f[0..=4].to_string(),
+        .map(|(_, [f, t, y])| StationHistoricFile {
+            filename: f.to_string() + "." + t,
+            station: f.to_string(),
+            data_type: StationDataType::Unsupported,
             year: y.to_string(),
         })
         .collect();
@@ -58,7 +62,7 @@ pub async fn get_station_available_downloads(
 
 pub async fn get_historic_files(
     data_type: StationDataType,
-) -> Result<Vec<StationFile>, Box<dyn std::error::Error>> {
+) -> Result<Vec<StationHistoricFile>, Box<dyn std::error::Error>> {
     // This function returns a list of all downloadable historic files for a specified data_type (eg. stdmet, cwind, swden)
     debug!("called get_historic_files");
 
@@ -68,15 +72,17 @@ pub async fn get_historic_files(
         r###"<tr><td valign="top"><img src="/icons/compressed.gif" alt="\[   \]"></td><td><a href="(.{5,50})">(.{5,50})</a></td><td align="right">(.{5,50})</td><td align="right">(.{1,50})</td><td>(.{1,50})</td></tr>"###,
     )
     .unwrap();
+    debug!("url {}", &url);
 
     let body = reqwest::get(url).await?.text().await?;
 
     let res = re
         .captures_iter(&body)
         .map(|c| c.extract())
-        .map(|(_, [f, _, _, _, _])| StationFile {
+        .map(|(_, [f, _, _, _, _])| StationHistoricFile {
             filename: f.to_string(),
             station: f[0..=4].to_string().to_uppercase(),
+            data_type: StationDataType::Unsupported,
             year: f[6..=9].to_string(),
         })
         .collect();
@@ -104,7 +110,8 @@ pub async fn get_station_historical_stdmet_data(
         &(r"([0-9M\+\.-]+)[\s\n]+".repeat(18)),
     )
     .unwrap();
-
+    debug!("url {}", &url);
+    
     let body = reqwest::get(url).await?.text().await?;
 
     let res = re
@@ -149,12 +156,12 @@ pub async fn get_station_historical_cwind_data(
         + "&dir=data/historical/"
         + StationDataType::ContinuousWinds.as_str()
         + "/";
-
     let re = Regex::new(
         &(r"([0-9M\+\.-]+)[\s\n]+".repeat(10)),
     )
     .unwrap();
-
+    debug!("url {}", &url);
+    
     let body = reqwest::get(url).await?.text().await?;
 
     let res = re

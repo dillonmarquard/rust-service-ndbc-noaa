@@ -1,26 +1,26 @@
 mod ndbc;
 
 use actix_web::{get, web, App, HttpServer, Responder};
-use log::{info, warn};
+use log::{debug, warn, info};
 use ndbc::{
     historic::{
         get_historic_files, get_station_available_downloads, get_station_historical_cwind_data,
         get_station_historical_stdmet_data,
     },
-    ndbc_schema::{Station, StationDataType, StationFile},
+    ndbc_schema::{Station, StationDataType, StationHistoricFile, StationRealtimeFile},
     realtime::{
-        get_active_stations, get_station_realtime_cwind_data, get_station_realtime_stdmet_data,
+        get_active_stations, get_realtime_files, get_station_realtime_cwind_data, get_station_realtime_stdmet_data,
         get_station_realtime_stdmetdrift_data,
     },
 };
 
 #[get("/station")]
 async fn service_active_stations() -> Result<impl Responder, Box<dyn std::error::Error>> {
-    info!("service_active_stations");
+    debug!("service_active_stations");
     let active_stations: Vec<Station> = get_active_stations().await?;
 
     if active_stations.is_empty() {
-        warn!("No active stations were found");
+        debug!("No active stations were found");
     }
 
     let mut historic_data = get_historic_files(StationDataType::StandardMeteorological).await?;
@@ -28,14 +28,14 @@ async fn service_active_stations() -> Result<impl Responder, Box<dyn std::error:
     let mut enhanced_stations: Vec<Station> = active_stations
         .into_iter()
         .map(|mut s: Station| {
-            let tmp: Vec<StationFile> = historic_data
+            let tmp: Vec<StationHistoricFile> = historic_data
                 .iter()
-                .filter(|d: &&StationFile| d.station == s.id)
-                .map(|x: &StationFile| x.clone())
+                .filter(|d: &&StationHistoricFile| d.station == s.id)
+                .map(|x: &StationHistoricFile| x.clone())
                 .collect();
 
             if tmp.is_empty() {
-                warn!("No historic data was found for station: {}", &s.id);
+                debug!("No historic data was found for station: {}", &s.id);
             } else {
                 s.stdmet_history = Some(tmp);
             }
@@ -49,14 +49,14 @@ async fn service_active_stations() -> Result<impl Responder, Box<dyn std::error:
     enhanced_stations = enhanced_stations
         .into_iter()
         .map(|mut s: Station| {
-            let tmp: Vec<StationFile> = historic_data
+            let tmp: Vec<StationHistoricFile> = historic_data
                 .iter()
-                .filter(|d: &&StationFile| d.station == s.id)
-                .map(|x: &StationFile| x.clone())
+                .filter(|d: &&StationHistoricFile| d.station == s.id)
+                .map(|x: &StationHistoricFile| x.clone())
                 .collect();
 
             if tmp.is_empty() {
-                warn!("No historic data was found for station: {}", &s.id);
+                debug!("No historic data was found for station: {}", &s.id);
             } else {
                 s.cwind_history = Some(tmp);
             }
@@ -65,6 +65,49 @@ async fn service_active_stations() -> Result<impl Responder, Box<dyn std::error:
         })
         .collect();
 
+    let stdmet_realtime: Vec<StationRealtimeFile> = get_realtime_files(StationDataType::StandardMeteorological).await?;
+
+    enhanced_stations = enhanced_stations
+        .into_iter()
+        .map(|mut s: Station| {
+            let tmp: Vec<StationRealtimeFile> = stdmet_realtime
+                .iter()
+                .filter(|d: &&StationRealtimeFile| d.station == s.id)
+                .map(|x: &StationRealtimeFile| x.clone())
+                .collect();
+
+            if tmp.is_empty() {
+                debug!("No realtime data was found for station: {}", &s.id);
+            } else {
+                s.stdmet_realtime = Some(tmp);
+            }
+
+            s
+        })
+        .collect();
+
+    let cwdind_realtime = get_realtime_files(StationDataType::ContinuousWinds).await?;
+
+    enhanced_stations = enhanced_stations
+        .into_iter()
+        .map(|mut s: Station| {
+            let tmp: Vec<StationRealtimeFile> = cwdind_realtime
+                .iter()
+                .filter(|d: &&StationRealtimeFile| d.station == s.id)
+                .map(|x: &StationRealtimeFile| x.clone())
+                .collect();
+
+            if tmp.is_empty() {
+                debug!("No realtime data was found for station: {}", &s.id);
+            } else {
+                s.cwind_realtime = Some(tmp);
+            }
+
+            s
+        })
+        .collect();
+
+
     Ok(web::Json(enhanced_stations))
 }
 
@@ -72,7 +115,7 @@ async fn service_active_stations() -> Result<impl Responder, Box<dyn std::error:
 async fn service_station_metadata(
     path: web::Path<String>,
 ) -> Result<impl Responder, Box<dyn std::error::Error>> {
-    info!("service_station_stdmet_historic_data");
+    debug!("service_station_stdmet_historic_data");
 
     let id: String = path.into_inner();
     let active_stations: Vec<Station> = get_active_stations().await?;
@@ -81,26 +124,69 @@ async fn service_station_metadata(
         .filter(|s: &Station| s.id == id)
         .collect();
 
-    let historic_stdmet_data: Vec<StationFile> =
+    let historic_stdmet_data: Vec<StationHistoricFile> =
         get_station_available_downloads(&id, StationDataType::StandardMeteorological)
             .await?;
 
-    let historic_cwind_data: Vec<StationFile> =
+    let historic_cwind_data: Vec<StationHistoricFile> =
         get_station_available_downloads(&id, StationDataType::ContinuousWinds)
             .await?;
 
-    if active_stdmet_stations.is_empty() && historic_cwind_data.is_empty() {
-        warn!("No metadata was found for station: {id}");
+    let stdmet_realtime: Vec<StationRealtimeFile> = get_realtime_files(StationDataType::StandardMeteorological).await?;
+
+    active_stdmet_stations = active_stdmet_stations
+        .into_iter()
+        .map(|mut s: Station| {
+            let tmp: Vec<StationRealtimeFile> = stdmet_realtime
+                .iter()
+                .filter(|d: &&StationRealtimeFile| d.station == id)
+                .map(|x: &StationRealtimeFile| x.clone())
+                .collect();
+
+            if tmp.is_empty() {
+                debug!("No realtime data was found for station: {}", &s.id);
+            } else {
+                s.stdmet_realtime = Some(tmp);
+            }
+
+            s
+        })
+        .collect();
+
+    let cwind_realtime = get_realtime_files(StationDataType::ContinuousWinds).await?;
+
+    active_stdmet_stations = active_stdmet_stations
+        .into_iter()
+        .map(|mut s: Station| {
+            let tmp: Vec<StationRealtimeFile> = cwind_realtime
+                .iter()
+                .filter(|d: &&StationRealtimeFile| d.station == s.id)
+                .map(|x: &StationRealtimeFile| x.clone())
+                .collect();
+
+            if tmp.is_empty() {
+                debug!("No realtime data was found for station: {}", &s.id);
+            } else {
+                s.cwind_realtime = Some(tmp);
+            }
+
+            s
+        })
+        .collect();
+
+
+    if active_stdmet_stations.is_empty() {
+        debug!("No metadata was found for station: {id}");
     }
 
     if historic_stdmet_data.is_empty() {
-        warn!("No historic stdmet data was found for station: {id}");
+        debug!("No historic stdmet data was found for station: {id}");
     } else {
         active_stdmet_stations[0].stdmet_history = Some(historic_stdmet_data);
     }
 
     if historic_cwind_data.is_empty() {
-        warn!("No historic cwind data was found for station: {id}");
+        debug!("No historic cwind data was found for station: {id}");
     } else {
         active_stdmet_stations[0].cwind_history = Some(historic_cwind_data);
     }
@@ -112,13 +198,13 @@ async fn service_station_metadata(
 async fn service_station_stdmet_historic_data(
     path: web::Path<(String, String)>,
 ) -> Result<impl Responder, Box<dyn std::error::Error>> {
-    info!("service_station_stdmet_historic_data");
+    debug!("service_station_stdmet_historic_data");
     let (id, year) = path.into_inner();
     let res: Vec<ndbc::ndbc_schema::StationStdMetData> =
         get_station_historical_stdmet_data(&id, &year).await?;
 
     if res.is_empty() {
-        warn!("No stdmet data was found for the station: {id} for the year of {year}");
+        debug!("No stdmet data was found for the station: {id} for the year of {year}");
     }
 
     Ok(web::Json(res))
@@ -128,13 +214,13 @@ async fn service_station_stdmet_historic_data(
 async fn service_station_cwind_historic_data(
     path: web::Path<(String, String)>,
 ) -> Result<impl Responder, Box<dyn std::error::Error>> {
-    info!("service_station_cwind_historic_data");
+    debug!("service_station_cwind_historic_data");
     let (id, year) = path.into_inner();
     let res: Vec<ndbc::ndbc_schema::StationContinuousWindsData> =
         get_station_historical_cwind_data(&id, &year).await?;
 
     if res.is_empty() {
-        warn!("No cwind data was found for the station: {id} for the year of {year}");
+        debug!("No cwind data was found for the station: {id} for the year of {year}");
     }
 
     Ok(web::Json(res))
@@ -144,13 +230,13 @@ async fn service_station_cwind_historic_data(
 async fn service_station_stdmet_realtime_data(
     path: web::Path<String>,
 ) -> Result<impl Responder, Box<dyn std::error::Error>> {
-    info!("service_station_stdmet_realtime_data");
+    debug!("service_station_stdmet_realtime_data");
     let id: String = path.into_inner();
     let res: Vec<ndbc::ndbc_schema::StationStdMetData> =
         get_station_realtime_stdmet_data(&id).await?;
 
     if res.is_empty() {
-        warn!("No realtime stdmet data was found for the station: {id}");
+        debug!("No realtime stdmet data was found for the station: {id}");
     }
 
     Ok(web::Json(res))
@@ -160,13 +246,13 @@ async fn service_station_stdmet_realtime_data(
 async fn service_station_stdmetdrift_realtime_data(
     path: web::Path<String>,
 ) -> Result<impl Responder, Box<dyn std::error::Error>> {
-    info!("service_station_stdmetdrift_realtime_data");
+    debug!("service_station_stdmetdrift_realtime_data");
     let id: String = path.into_inner();
     let res: Vec<ndbc::ndbc_schema::StationStdMetData> =
         get_station_realtime_stdmetdrift_data(&id).await?;
 
     if res.is_empty() {
-        warn!("No realtime stdmetdrift data was found for the station: {id}");
+        debug!("No realtime stdmetdrift data was found for the station: {id}");
     }
 
     Ok(web::Json(res))
@@ -176,13 +262,13 @@ async fn service_station_stdmetdrift_realtime_data(
 async fn service_station_cwind_realtime_data(
     path: web::Path<String>,
 ) -> Result<impl Responder, Box<dyn std::error::Error>> {
-    info!("service_station_cwind_realtime_data");
+    debug!("service_station_cwind_realtime_data");
     let id: String = path.into_inner();
     let res: Vec<ndbc::ndbc_schema::StationContinuousWindsData> =
         get_station_realtime_cwind_data(&id).await?;
 
     if res.is_empty() {
-        warn!("No realtime cwind data was found for the station: {id}");
+        debug!("No realtime cwind data was found for the station: {id}");
     }
 
     Ok(web::Json(res))
@@ -190,10 +276,12 @@ async fn service_station_cwind_realtime_data(
 
 #[actix_web::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    std::env::set_var("RUST_LOG", "info");
+    unsafe {
+        std::env::set_var("RUST_LOG", "debug");
+    }
     env_logger::init();
 
-    info!("Starting `rust-service-ndbc-noaa` API");
+    debug!("Starting `rust-service-ndbc-noaa` API");
 
     HttpServer::new(|| {
         App::new()

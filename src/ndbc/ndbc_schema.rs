@@ -50,14 +50,10 @@ pub struct Station {
     pub waterquality: Option<bool>,
     #[serde(default, deserialize_with = "deserialize_bool")]
     pub dart: Option<bool>,
-    pub stdmet_history: Option<Vec<StationFile>>,
-    pub cwind_history: Option<Vec<StationFile>>,
-    // pub swden_history: Option<Vec<String>>, //todo
-    // pub swdir_history: Option<Vec<String>>, //todo
-    // pub swdir2_history: Option<Vec<String>>, //todo
-    // pub swr1_history: Option<Vec<String>>, //todo
-    // pub swr2_history: Option<Vec<String>>, //todo
-    // pub srad_history: Option<Vec<String>>, //todo
+    pub stdmet_history: Option<Vec<StationHistoricFile>>,
+    pub cwind_history: Option<Vec<StationHistoricFile>>,
+    pub stdmet_realtime: Option<Vec<StationRealtimeFile>>,
+    pub cwind_realtime: Option<Vec<StationRealtimeFile>>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -68,42 +64,50 @@ pub struct ActiveStationsResponse {
     pub stations: Vec<Station>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct StationMetadataHistory {
-    pub start: Option<String>,
-    pub stop: Option<String>,
-    pub lat: Option<String>,
-    pub lng: Option<String>,
-    pub elev: Option<String>,
-    pub met: Option<String>,
-    pub hull: Option<String>,
-    pub anemom_height: Option<String>,
-}
+// #[derive(Debug, Deserialize, Serialize, Clone)]
+// pub struct StationMetadataHistory {
+//     pub start: Option<String>,
+//     pub stop: Option<String>,
+//     pub lat: Option<String>,
+//     pub lng: Option<String>,
+//     pub elev: Option<String>,
+//     pub met: Option<String>,
+//     pub hull: Option<String>,
+//     pub anemom_height: Option<String>,
+// }
+
+// #[derive(Debug, Deserialize, Serialize, Clone)]
+// pub struct StationMetadata {
+//     pub id: String,
+//     pub name: Option<String>,
+//     pub owner: Option<String>,
+//     pub pgm: Option<String>,
+//     pub r#type: Option<String>,
+//     pub history: Vec<StationMetadataHistory>,
+// }
+
+// #[derive(Debug, Deserialize, Serialize, Clone)]
+// pub struct StationsMetadataResponse {
+//     pub created: DateTime<Utc>,
+//     #[serde(alias = "station")]
+//     pub stations: Vec<StationMetadata>,
+// }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct StationMetadata {
-    pub id: String,
-    pub name: Option<String>,
-    pub owner: Option<String>,
-    pub pgm: Option<String>,
-    pub r#type: Option<String>,
-    pub history: Vec<StationMetadataHistory>,
-}
-
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct StationsMetadataResponse {
-    pub created: DateTime<Utc>,
-    #[serde(alias = "station")]
-    pub stations: Vec<StationMetadata>,
-}
-
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct StationFile {
+pub struct StationHistoricFile {
     pub filename: String,
     pub station: String,
+    pub data_type: StationDataType,
     pub year: String,
 }
-
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct StationRealtimeFile {
+    pub filename: String,
+    pub station: String,
+    pub data_type: StationDataType,
+    pub timestamp: NaiveDateTime,
+}
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub enum StationDataType {
     StandardMeteorological,
     ContinuousWinds,
@@ -114,6 +118,7 @@ pub enum StationDataType {
     SpectralWaveR1Density,
     SpectralWaveR2Density,
     SolarRadiation,
+    Unsupported,
 }
 
 impl StationDataType {
@@ -128,6 +133,7 @@ impl StationDataType {
             StationDataType::SpectralWaveR1Density => "swr1",
             StationDataType::SpectralWaveR2Density => "swr2",
             StationDataType::SolarRadiation => "srad",
+            StationDataType::Unsupported => "unsupported",
         }
     }
 }
@@ -163,6 +169,7 @@ pub struct StationContinuousWindsData {
 }
 
 pub fn check_null_string(value: &str) -> bool {
+    // This function may not be correct such that different attributes have different null values, but the null values are not shared between all of them.
     match value {
         "9" => true,
         "9.0" => true,
