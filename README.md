@@ -16,18 +16,21 @@ Any questions regarding the meaning of an attribute or measurement can be found 
 ### Endpoints
 * /station
    * metadata for all active stations
+   * includes availability of historic and realtime data
 * /station/{id}
     * metadata for a specific station
     * historic stdmet data available for download
 * /station/{id}/stdmet/{year}
     * historic Standard Meteorological sensor data for the specified station and year
+* /station/{id}/cwind/{year}
+    * historic Continuous Winds sensor data for the specified station and year
 * /station/{id}/stdmet/realtime
     * realtime (last 45 days) stdmet sensor data for the specified station
 * /station/{id}/stdmetdrift/realtime
     * realtime (last 45 days) stdmet drift sensor data for the specified station
     * drifting buoys do not provide stdmet data in the same format
     * other realtime formats will be supported in the future eg. ocean
-* /station/{id}/cwind/{year}
+
 * /station/{id}/cwind/realtime
 
 ### Future Considerations

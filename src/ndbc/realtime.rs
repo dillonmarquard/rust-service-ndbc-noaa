@@ -2,9 +2,12 @@ use chrono::NaiveDateTime;
 use regex::Regex;
 use serde_xml_rs::from_str;
 
-use super::ndbc_schema::{ActiveStationsResponse, Station, StationStdMetData, StationContinuousWindsData, StationDataType, StationRealtimeFile, check_null_string};
+use super::ndbc_schema::{
+    check_null_string, ActiveStationsResponse, Station, StationContinuousWindsData,
+    StationDataType, StationRealtimeFile, StationStdMetData,
+};
 
-use log::{debug, warn, error};
+use log::{debug, error, warn};
 
 pub async fn get_active_stations() -> Result<Vec<Station>, Box<dyn std::error::Error>> {
     // This function returns a list of all active stations.
@@ -26,12 +29,11 @@ pub async fn get_realtime_files(
     // This function returns a list of all downloadable realtime files for a specified data_type (eg. stdmet, cwind, swden)
     debug!("get_realtime_files");
 
-    let url: String =
-        "".to_string() + "https://www.ndbc.noaa.gov/data/realtime2/";
+    let url: String = "".to_string() + "https://www.ndbc.noaa.gov/data/realtime2/";
     let re = Regex::new(
         r###"<tr><td valign="top"><img src="/icons/text.gif" alt="\[TXT\]"></td><td><a href="(.{5,50})\.(.{2,50})">(.{5,50})</a></td><td align="right">(.{5,50})</td><td align="right">(.{1,50})</td><td>(.{1,50})</td></tr>"###,
     )
-    .unwrap();    
+    .unwrap();
     debug!("url {}", &url);
 
     let body = reqwest::get(url).await?.text().await?;
@@ -47,7 +49,8 @@ pub async fn get_realtime_files(
                 "cwind" => StationDataType::ContinuousWinds,
                 _ => StationDataType::Unsupported,
             },
-            timestamp: NaiveDateTime::parse_from_str(&ts.to_string().trim(),"%Y-%m-%d %H:%M").unwrap(),
+            timestamp: NaiveDateTime::parse_from_str(&ts.to_string().trim(), "%Y-%m-%d %H:%M")
+                .unwrap(),
         })
         .filter(|c| c.data_type == data_type)
         .collect();
@@ -66,10 +69,7 @@ pub async fn get_station_realtime_stdmet_data(
         + "https://www.ndbc.noaa.gov/data/realtime2/"
         + station.to_uppercase().as_str()
         + ".txt";
-    let re = Regex::new(
-        &(r"([0-9M\+\.-]+)[\s\n]+".repeat(19)),
-    )
-    .unwrap();
+    let re = Regex::new(&(r"([0-9M\+\.-]+)[\s\n]+".repeat(19))).unwrap();
     debug!("url {}", &url);
 
     let body = reqwest::get(url).await?.text().await?;
@@ -77,7 +77,7 @@ pub async fn get_station_realtime_stdmet_data(
     let res = re
         .captures_iter(&body)
         .map(|c| c.extract())
-        .map(|(_, [year, month, day, hour, minute, wdir, wspd, gst, wvht, dpd, apd, mwd, pres, atmp, wtmp, dewp, vis, ptdy, tide])| 
+        .map(|(_, [year, month, day, hour, minute, wdir, wspd, gst, wvht, dpd, apd, mwd, pres, atmp, wtmp, dewp, vis, ptdy, tide])|
             StationStdMetData {
                 station: station.to_string().to_uppercase(),
                 timestamp: NaiveDateTime::parse_from_str(("".to_string() + year + "-" + month + "-" + day + " " + hour + ":" + minute).as_str(), "%Y-%m-%d %H:%M").unwrap(),
@@ -113,36 +113,33 @@ pub async fn get_station_realtime_stdmetdrift_data(
         + "https://www.ndbc.noaa.gov/data/realtime2/"
         + station.to_uppercase().as_str()
         + ".drift";
-    debug!("{}",&url);
+    debug!("{}", &url);
 
-    let re = Regex::new(
-        &(r"([0-9M\+\.-]+)[\s\n]+".repeat(16)),
-    )
-    .unwrap();
-    
+    let re = Regex::new(&(r"([0-9M\+\.-]+)[\s\n]+".repeat(16))).unwrap();
+
     let body = reqwest::get(url).await?.text().await?;
 
     let res = re
         .captures_iter(&body)
         .map(|c| c.extract())
-        .map(|(_, [year, month, day, hourminute, _lat, _lon, wdir, gst, wspd, pres, ptdy, atmp, wtmp, dewp, wvht, dpd])| 
-            StationStdMetData { 
+        .map(|(_, [year, month, day, hourminute, _lat, _lon, wdir, gst, wspd, pres, ptdy, atmp, wtmp, dewp, wvht, dpd])|
+            StationStdMetData {
                 // re-use stdmet struct even though some data is dropped
                 station: station.to_string().to_uppercase(),
                 timestamp: NaiveDateTime::parse_from_str(("".to_string() + year + "-" + month + "-" + day + " " + hourminute).as_str(), "%Y-%m-%d %H%M").unwrap(),
-                wdir: if wdir != "MM" { Some(wdir.to_string()) } else {None} ,
-                wspd: if wspd != "MM" { Some(wspd.to_string())} else {None},
-                gst: if gst != "MM" { Some(gst.to_string())} else {None},
-                wvht: if wvht != "MM" { Some(wvht.to_string())} else {None},
-                dpd: if dpd != "MM" { Some(dpd.to_string())} else {None},
+                wdir: if !check_null_string(wdir){ Some(wdir.to_string()) } else {None} ,
+                wspd: if !check_null_string(wspd){ Some(wspd.to_string())} else {None},
+                gst: if !check_null_string(gst){ Some(gst.to_string())} else {None},
+                wvht: if !check_null_string(wvht){ Some(wvht.to_string())} else {None},
+                dpd: if !check_null_string(dpd){ Some(dpd.to_string())} else {None},
                 apd: None,
                 mwd: None,
-                pres: if pres != "MM" { Some(pres.to_string())} else {None},
-                atmp: if atmp != "MM" { Some(atmp.to_string())} else {None},
-                wtmp: if wtmp != "MM" { Some(wtmp.to_string())} else {None},
-                dewp: if dewp != "MM" { Some(dewp.to_string())} else {None},
+                pres: if !check_null_string(pres){ Some(pres.to_string())} else {None},
+                atmp: if !check_null_string(atmp){ Some(atmp.to_string())} else {None},
+                wtmp: if !check_null_string(wtmp){ Some(wtmp.to_string())} else {None},
+                dewp: if !check_null_string(dewp){ Some(dewp.to_string())} else {None},
                 vis: None,
-                ptdy: if ptdy != "MM" { Some(ptdy.to_string())} else {None},
+                ptdy: if !check_null_string(ptdy){ Some(ptdy.to_string())} else {None},
                 tide: None,
             }
         )
@@ -162,26 +159,57 @@ pub async fn get_station_realtime_cwind_data(
         + "https://www.ndbc.noaa.gov/data/realtime2/"
         + station.to_uppercase().as_str()
         + ".cwind";
-    debug!("{}",&url);
+    debug!("{}", &url);
 
-    let re = Regex::new(
-        &(r"([0-9M\+\.-]+)[\s\n]+".repeat(10)),
-    )
-    .unwrap();
+    let re = Regex::new(&(r"([0-9M\+\.-]+)[\s\n]+".repeat(10))).unwrap();
 
     let body = reqwest::get(url).await?.text().await?;
 
     let res = re
         .captures_iter(&body)
         .map(|c| c.extract())
-        .map(|(_, [year, month, day, hour, minute, wdir, wspd, gdr, gst, _gtime])| StationContinuousWindsData {
-            station: station.to_string().to_uppercase(),
-            timestamp: NaiveDateTime::parse_from_str(("".to_string() + year + "-" + month + "-" + day + " " + hour + ":" + minute).as_str(), "%Y-%m-%d %H:%M").unwrap(),
-            wdir: if !check_null_string(wdir) { Some(wdir.to_string()) } else {None},
-            wspd: if !check_null_string(wspd) { Some(wspd.to_string())} else {None},
-            gdr: if !check_null_string(gdr) { Some(gdr.to_string())} else {None},
-            gst: if !check_null_string(gst) { Some(gst.to_string())} else {None},
-        })
+        .map(
+            |(_, [year, month, day, hour, minute, wdir, wspd, gdr, gst, _gtime])| {
+                StationContinuousWindsData {
+                    station: station.to_string().to_uppercase(),
+                    timestamp: NaiveDateTime::parse_from_str(
+                        ("".to_string()
+                            + year
+                            + "-"
+                            + month
+                            + "-"
+                            + day
+                            + " "
+                            + hour
+                            + ":"
+                            + minute)
+                            .as_str(),
+                        "%Y-%m-%d %H:%M",
+                    )
+                    .unwrap(),
+                    wdir: if !check_null_string(wdir) {
+                        Some(wdir.to_string())
+                    } else {
+                        None
+                    },
+                    wspd: if !check_null_string(wspd) {
+                        Some(wspd.to_string())
+                    } else {
+                        None
+                    },
+                    gdr: if !check_null_string(gdr) {
+                        Some(gdr.to_string())
+                    } else {
+                        None
+                    },
+                    gst: if !check_null_string(gst) {
+                        Some(gst.to_string())
+                    } else {
+                        None
+                    },
+                }
+            },
+        )
         .collect();
 
     Ok(res)

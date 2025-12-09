@@ -64,34 +64,34 @@ pub struct ActiveStationsResponse {
     pub stations: Vec<Station>,
 }
 
-// #[derive(Debug, Deserialize, Serialize, Clone)]
-// pub struct StationMetadataHistory {
-//     pub start: Option<String>,
-//     pub stop: Option<String>,
-//     pub lat: Option<String>,
-//     pub lng: Option<String>,
-//     pub elev: Option<String>,
-//     pub met: Option<String>,
-//     pub hull: Option<String>,
-//     pub anemom_height: Option<String>,
-// }
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct StationMetadataHistory {
+    pub start: Option<String>,
+    pub stop: Option<String>,
+    pub lat: Option<String>,
+    pub lng: Option<String>,
+    pub elev: Option<String>,
+    pub met: Option<String>,
+    pub hull: Option<String>,
+    pub anemom_height: Option<String>,
+}
 
-// #[derive(Debug, Deserialize, Serialize, Clone)]
-// pub struct StationMetadata {
-//     pub id: String,
-//     pub name: Option<String>,
-//     pub owner: Option<String>,
-//     pub pgm: Option<String>,
-//     pub r#type: Option<String>,
-//     pub history: Vec<StationMetadataHistory>,
-// }
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct StationMetadata {
+    pub id: String,
+    pub name: Option<String>,
+    pub owner: Option<String>,
+    pub pgm: Option<String>,
+    pub r#type: Option<String>,
+    pub history: Vec<StationMetadataHistory>,
+}
 
-// #[derive(Debug, Deserialize, Serialize, Clone)]
-// pub struct StationsMetadataResponse {
-//     pub created: DateTime<Utc>,
-//     #[serde(alias = "station")]
-//     pub stations: Vec<StationMetadata>,
-// }
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct StationsMetadataResponse {
+    pub created: DateTime<Utc>,
+    #[serde(alias = "station")]
+    pub stations: Vec<StationMetadata>,
+}
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct StationHistoricFile {

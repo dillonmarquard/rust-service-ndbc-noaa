@@ -3,34 +3,33 @@ use regex::Regex;
 use serde_xml_rs::from_str;
 
 use super::ndbc_schema::{
-    StationDataType, StationHistoricFile, StationStdMetData,
-    StationContinuousWindsData,
-    check_null_string
+    check_null_string, StationContinuousWindsData, StationDataType, StationHistoricFile,
+    StationMetadata, StationStdMetData, StationsMetadataResponse,
 };
 
 use log::debug;
 
-// pub async fn get_stations_metadata() -> Result<Vec<StationMetadata>, Box<dyn std::error::Error>> {
-//     // This function returns the historical station metadata back to 2000 for all stations on the NDBC.
-//     // This function is not currently used.
-//     debug!("called get_stations_metadata");
+pub async fn get_stations_metadata() -> Result<Vec<StationMetadata>, Box<dyn std::error::Error>> {
+    // This function returns the historical station metadata for all stations on the NDBC.
+    // This function is not currently used, and is only provided to ensure parity with source system.
+    debug!("called get_stations_metadata");
 
-//     let url: &str = "https://www.ndbc.noaa.gov/metadata/stationmetadata.xml";
-//     debug!("url {}", &url);
+    let url: &str = "https://www.ndbc.noaa.gov/metadata/stationmetadata.xml";
+    debug!("url {}", &url);
 
-//     let body = reqwest::get(url).await?.text().await?;
+    let body = reqwest::get(url).await?.text().await?;
 
-//     let res = from_str::<StationsMetadataResponse>(body.as_str()).unwrap();
+    let res = from_str::<StationsMetadataResponse>(body.as_str()).unwrap();
 
-//     Ok(res.stations)
-// }
+    Ok(res.stations)
+}
 
 pub async fn get_station_available_downloads(
     station: &str,
     data_type: StationDataType,
 ) -> Result<Vec<StationHistoricFile>, Box<dyn std::error::Error>> {
     // This function returns a list of historic files for the given station and data_type (eg. stdmet, cwind, swden)
-    // Please use get_historic_files for bulk lookup and filter the desired stations to avoid spamming the resource.
+    // Please use get_historic_files for bulk lookup (and filter the desired stations) to avoid spamming the resource.
     debug!("called get_station_available_downloads");
 
     let url: String = format!("https://www.ndbc.noaa.gov/station_history.php?station={station}");
@@ -106,12 +105,9 @@ pub async fn get_station_historical_stdmet_data(
         + "&dir=data/historical/"
         + StationDataType::StandardMeteorological.as_str()
         + "/";
-    let re = Regex::new(
-        &(r"([0-9M\+\.-]+)[\s\n]+".repeat(18)),
-    )
-    .unwrap();
+    let re = Regex::new(&(r"([0-9M\+\.-]+)[\s\n]+".repeat(18))).unwrap();
     debug!("url {}", &url);
-    
+
     let body = reqwest::get(url).await?.text().await?;
 
     let res = re
@@ -156,25 +152,56 @@ pub async fn get_station_historical_cwind_data(
         + "&dir=data/historical/"
         + StationDataType::ContinuousWinds.as_str()
         + "/";
-    let re = Regex::new(
-        &(r"([0-9M\+\.-]+)[\s\n]+".repeat(10)),
-    )
-    .unwrap();
+    let re = Regex::new(&(r"([0-9M\+\.-]+)[\s\n]+".repeat(10))).unwrap();
     debug!("url {}", &url);
-    
+
     let body = reqwest::get(url).await?.text().await?;
 
     let res = re
         .captures_iter(&body)
         .map(|c| c.extract())
-        .map(|(_, [year, month, day, hour, minute, wdir, wspd, gdr, gst, _gtime])| StationContinuousWindsData {
-            station: station.to_string().to_uppercase(),
-            timestamp: NaiveDateTime::parse_from_str(("".to_string() + year + "-" + month + "-" + day + " " + hour + ":" + minute).as_str(), "%Y-%m-%d %H:%M").unwrap(),
-            wdir: if !check_null_string(wdir) { Some(wdir.to_string()) } else {None},
-            wspd: if !check_null_string(wspd) { Some(wspd.to_string())} else {None},
-            gdr: if !check_null_string(gdr) { Some(gdr.to_string())} else {None},
-            gst: if !check_null_string(gst) { Some(gst.to_string())} else {None},
-        })
+        .map(
+            |(_, [year, month, day, hour, minute, wdir, wspd, gdr, gst, _gtime])| {
+                StationContinuousWindsData {
+                    station: station.to_string().to_uppercase(),
+                    timestamp: NaiveDateTime::parse_from_str(
+                        ("".to_string()
+                            + year
+                            + "-"
+                            + month
+                            + "-"
+                            + day
+                            + " "
+                            + hour
+                            + ":"
+                            + minute)
+                            .as_str(),
+                        "%Y-%m-%d %H:%M",
+                    )
+                    .unwrap(),
+                    wdir: if !check_null_string(wdir) {
+                        Some(wdir.to_string())
+                    } else {
+                        None
+                    },
+                    wspd: if !check_null_string(wspd) {
+                        Some(wspd.to_string())
+                    } else {
+                        None
+                    },
+                    gdr: if !check_null_string(gdr) {
+                        Some(gdr.to_string())
+                    } else {
+                        None
+                    },
+                    gst: if !check_null_string(gst) {
+                        Some(gst.to_string())
+                    } else {
+                        None
+                    },
+                }
+            },
+        )
         .collect();
 
     Ok(res)

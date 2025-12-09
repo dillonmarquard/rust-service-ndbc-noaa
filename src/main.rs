@@ -1,7 +1,7 @@
 mod ndbc;
 
 use actix_web::{get, web, App, HttpServer, Responder};
-use log::{debug, warn, info};
+use log::{debug, info, warn};
 use ndbc::{
     historic::{
         get_historic_files, get_station_available_downloads, get_station_historical_cwind_data,
@@ -9,8 +9,8 @@ use ndbc::{
     },
     ndbc_schema::{Station, StationDataType, StationHistoricFile, StationRealtimeFile},
     realtime::{
-        get_active_stations, get_realtime_files, get_station_realtime_cwind_data, get_station_realtime_stdmet_data,
-        get_station_realtime_stdmetdrift_data,
+        get_active_stations, get_realtime_files, get_station_realtime_cwind_data,
+        get_station_realtime_stdmet_data, get_station_realtime_stdmetdrift_data,
     },
 };
 
@@ -65,7 +65,8 @@ async fn service_active_stations() -> Result<impl Responder, Box<dyn std::error:
         })
         .collect();
 
-    let stdmet_realtime: Vec<StationRealtimeFile> = get_realtime_files(StationDataType::StandardMeteorological).await?;
+    let stdmet_realtime: Vec<StationRealtimeFile> =
+        get_realtime_files(StationDataType::StandardMeteorological).await?;
 
     enhanced_stations = enhanced_stations
         .into_iter()
@@ -107,7 +108,6 @@ async fn service_active_stations() -> Result<impl Responder, Box<dyn std::error:
         })
         .collect();
 
-
     Ok(web::Json(enhanced_stations))
 }
 
@@ -125,14 +125,13 @@ async fn service_station_metadata(
         .collect();
 
     let historic_stdmet_data: Vec<StationHistoricFile> =
-        get_station_available_downloads(&id, StationDataType::StandardMeteorological)
-            .await?;
+        get_station_available_downloads(&id, StationDataType::StandardMeteorological).await?;
 
     let historic_cwind_data: Vec<StationHistoricFile> =
-        get_station_available_downloads(&id, StationDataType::ContinuousWinds)
-            .await?;
+        get_station_available_downloads(&id, StationDataType::ContinuousWinds).await?;
 
-    let stdmet_realtime: Vec<StationRealtimeFile> = get_realtime_files(StationDataType::StandardMeteorological).await?;
+    let stdmet_realtime: Vec<StationRealtimeFile> =
+        get_realtime_files(StationDataType::StandardMeteorological).await?;
 
     active_stdmet_stations = active_stdmet_stations
         .into_iter()
@@ -173,7 +172,6 @@ async fn service_station_metadata(
             s
         })
         .collect();
-
 
     if active_stdmet_stations.is_empty() {
         debug!("No metadata was found for station: {id}");
