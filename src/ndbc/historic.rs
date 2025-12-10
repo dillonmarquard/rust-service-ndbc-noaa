@@ -1,5 +1,5 @@
 use super::ndbc_schema::{check_null_string, StationContinuousWindsData, StationDataType, StationHistoricFile, StationMetadata, StationStdMetData, StationsMetadataResponse};
-use chrono::NaiveDateTime;
+use chrono::{Datelike, NaiveDateTime, Utc};
 use log::debug;
 use regex::Regex;
 use serde_xml_rs::from_str;
@@ -69,11 +69,14 @@ pub async fn get_station_historical_stdmet_data(station: &str, year: &str) -> Re
         + "/";
     let re = Regex::new(&(r"([0-9M\+\.-]+)[\s\n]+".repeat(18))).unwrap();
 
-    if year.chars().any(|c| c.is_alphabetic()) {
+    // this assumes NOAA compiles the annual reports for each buoy by the first day of the new year (unlikely)
+    // this means this will likely not work at the start of a new year, until they compile the historic report
+    // we could only avoid this by using the historic files for reference
+    if year.chars().any(|c| c.is_alphabetic()) { // if year contains non-numeric character, then it must be a month of the year (supports mid-year historic data lookup)
         url = "".to_string()
         + "https://www.ndbc.noaa.gov/view_text_file.php?filename="
         + station.to_lowercase().as_str() // filenames are in lower-case and case sensitive
-        + match year { 
+        + match year { // in this case year represents a month (supports mid-year historic data)
             "Jan" => "1",
             "Feb" => "2",
             "Mar" => "3",
@@ -88,12 +91,12 @@ pub async fn get_station_historical_stdmet_data(station: &str, year: &str) -> Re
             "Dec" => "12",
             _ => "13"
         }
-        + "2025"
+        + &Utc::now().year().to_string() // wont work if NOAA is slow to compile annual historic report
         + ".txt.gz"
         + "&dir=data/"
         + StationDataType::StandardMeteorological.as_str()
         + "/"
-        + year
+        + year // in this case year represents a month (supports mid-year historic data)
         + "/";
     }
     debug!("url {}", &url);
