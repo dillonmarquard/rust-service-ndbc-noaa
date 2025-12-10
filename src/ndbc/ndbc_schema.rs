@@ -1,5 +1,3 @@
-// https://www.ndbc.noaa.gov/docs/ndbc_web_data_guide.pdf
-
 use chrono::{
     prelude::{DateTime, Utc},
     NaiveDateTime,
@@ -54,6 +52,7 @@ pub struct Station {
     pub cwind_history: Option<Vec<StationHistoricFile>>,
     pub stdmet_realtime: Option<Vec<StationRealtimeFile>>,
     pub cwind_realtime: Option<Vec<StationRealtimeFile>>,
+    pub spec_realtime: Option<Vec<StationRealtimeFile>>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -112,6 +111,7 @@ pub enum StationDataType {
     StandardMeteorological,
     ContinuousWinds,
     OceanCurrent,
+    SpectralWaveSummary,
     SpectralWaveDensity,
     SpectralWaveA1Density,
     SpectralWaveA2Density,
@@ -127,6 +127,7 @@ impl StationDataType {
             StationDataType::StandardMeteorological => "stdmet",
             StationDataType::ContinuousWinds => "cwind",
             StationDataType::OceanCurrent => "adcp",
+            StationDataType::SpectralWaveSummary => "spec",
             StationDataType::SpectralWaveDensity => "swden",
             StationDataType::SpectralWaveA1Density => "swdir",
             StationDataType::SpectralWaveA2Density => "swdir2",
@@ -142,30 +143,46 @@ impl StationDataType {
 pub struct StationStdMetData {
     pub station: String,
     pub timestamp: NaiveDateTime,
-    pub wdir: Option<String>,
-    pub wspd: Option<String>,
-    pub gst: Option<String>,
-    pub wvht: Option<String>,
-    pub dpd: Option<String>,
-    pub apd: Option<String>,
-    pub mwd: Option<String>,
-    pub pres: Option<String>,
-    pub atmp: Option<String>,
-    pub wtmp: Option<String>,
-    pub dewp: Option<String>,
-    pub vis: Option<String>,
-    pub ptdy: Option<String>,
-    pub tide: Option<String>,
+    pub wdir: Option<f32>,
+    pub wspd: Option<f32>,
+    pub gst: Option<f32>,
+    pub wvht: Option<f32>,
+    pub dpd: Option<f32>,
+    pub apd: Option<f32>,
+    pub mwd: Option<f32>,
+    pub pres: Option<f32>,
+    pub atmp: Option<f32>,
+    pub wtmp: Option<f32>,
+    pub dewp: Option<f32>,
+    pub vis: Option<f32>,
+    pub ptdy: Option<f32>,
+    pub tide: Option<f32>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct StationContinuousWindsData {
     pub station: String,
     pub timestamp: NaiveDateTime,
-    pub wdir: Option<String>,
-    pub wspd: Option<String>,
-    pub gdr: Option<String>,
-    pub gst: Option<String>,
+    pub wdir: Option<f32>,
+    pub wspd: Option<f32>,
+    pub gdr: Option<f32>,
+    pub gst: Option<f32>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct StationSpectralWaveSummary {
+    pub station: String,
+    pub timestamp: NaiveDateTime,
+    pub wvht: Option<f32>,
+    pub swh: Option<f32>,
+    pub swp: Option<f32>,
+    pub wwh: Option<f32>,
+    pub wwp: Option<f32>,
+    pub swd: Option<String>,
+    pub wwd: Option<String>,
+    pub steep: Option<String>,
+    pub apd: Option<f32>,
+    pub mwd: Option<f32>,
 }
 
 pub fn check_null_string(value: &str) -> bool {

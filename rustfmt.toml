@@ -1,0 +1,3 @@
+max_width = 5000
+edition = "2024"
+reorder_imports = true
