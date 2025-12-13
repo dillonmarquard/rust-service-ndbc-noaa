@@ -43,14 +43,51 @@ pub async fn get_historic_files(data_type: StationDataType) -> Result<Vec<Statio
     // This function returns a list of all downloadable historic files for a specified data_type (eg. stdmet, cwind, swden)
     debug!("called get_historic_files");
 
-    let url: String = "".to_string() + "https://www.ndbc.noaa.gov/data/historical/" + data_type.as_str();
+    let mut url: String = "".to_string() + "https://www.ndbc.noaa.gov/data/historical/" + data_type.as_str();
     let re = Regex::new(r###"<tr><td valign="top"><img src="/icons/compressed.gif" alt="\[   \]"></td><td><a href="(.{5,50})">(.{5,50})</a></td><td align="right">(.{5,50})</td><td align="right">(.{1,50})</td><td>(.{1,50})</td></tr>"###).unwrap();
     debug!("url {}", &url);
 
-    let body = reqwest::get(url).await?.text().await?;
+    let mut body = reqwest::get(url).await?.text().await?;
 
-    let res = re.captures_iter(&body).map(|c| c.extract()).map(|(_, [f, _, _, _, _])| StationHistoricFile { filename: f.to_string(), station: f[0..=4].to_string().to_uppercase(), data_type: data_type.clone(), year: f[6..=9].to_string() }).collect();
+    let mut res: Vec<StationHistoricFile> = re.captures_iter(&body).map(|c| c.extract()).map(|(_, [f, _, _, _, _])| StationHistoricFile { filename: f.to_string(), station: f[0..=4].to_string().to_uppercase(), data_type: data_type.clone(), year: f[6..=9].to_string() }).collect();
 
+    for i in 1..=12 {
+        url = "".to_string() + "https://www.ndbc.noaa.gov/data/" + data_type.as_str() + "/" +
+        match i { 
+            1 => "Jan",
+            2 => "Feb",
+            3 => "Mar",
+            4 => "Apr",
+            5 => "May",
+            6 => "Jun",
+            7 => "Jul",
+            8 => "Aug",
+            9 => "Sep",
+            10 => "Oct",
+            11 => "Nov",
+            12 => "Dec",
+            _ => "Error",
+        } 
+        + "/";
+        body = reqwest::get(url).await?.text().await?;
+        res.extend(re.captures_iter(&body).map(|c| c.extract()).map(|(_, [f, _, _, _, _])| StationHistoricFile { filename: f.to_string(), station: f[0..=4].to_string().to_uppercase(), data_type: data_type.clone(), year: match i { 
+            1 => "Jan".to_string(),
+            2 => "Feb".to_string(),
+            3 => "Mar".to_string(),
+            4 => "Apr".to_string(),
+            5 => "May".to_string(),
+            6 => "Jun".to_string(),
+            7 => "Jul".to_string(),
+            8 => "Aug".to_string(),
+            9 => "Sep".to_string(),
+            10 => "Oct".to_string(),
+            11 => "Nov".to_string(),
+            12 => "Dec".to_string(),
+            _ => "Error".to_string(),
+        } }));
+
+    }
+    
     Ok(res)
 }
 
