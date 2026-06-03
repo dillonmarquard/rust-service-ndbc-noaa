@@ -1,5 +1,5 @@
 # rust-service-ndbc-noaa
-A Rust Service for the National Data Bouy Center's API and Web-interface.
+A rust service for the NDBC NOAA API and Web-interface
 
 ### Useful Resources
 Any questions regarding the meaning of an attribute or measurement can be found on the NDBC website.  
